@@ -19,22 +19,51 @@
                 diffs: [{operation: 'UNCHANGED', text: 'Do or do not, there is no try'},{operation: 'DELETE', text: '.'},{operation: 'ADD', text: '!'}]
             }]};
         var url = 'ws://localhost:7777/sync';
-        var ws = new WebSocket(url);
+        var ws1 = new WebSocket(url);
         var ws2 = new WebSocket(url);
 
-        ws.onopen = function( evt ) {
-            ws.send( JSON.stringify ( addDocument ) );
-        };
+        function promiseOpened( ws ) {
+            return new Promise( function( resolve, reject ) {
+                ws.onopen = function( evt ) {
+                    console.log('ws: open');
+                    resolve( ws );
+                };
+            });
+        }
 
-        ws2.onopen = function( evt ) {
-            addDocument.clientId = "client2";
-            delete addDocument.content;
-            ws2.send( JSON.stringify ( addDocument ) );
-        };
+        Promise.all( [ promiseOpened( ws1 ), promiseOpened( ws2 ) ] )
+            .then( function( ws ) {
+                ws[0].send( JSON.stringify ( addDocument ) );
+                console.log('ws1: init');
+
+                addDocument.clientId = "client2";
+                delete addDocument.content;
+                ws[1].send( JSON.stringify ( addDocument ) );
+                console.log('ws2: init');
+            });
+//            .then( function( ws1, ws2 ) {
+//                debugger;
+//                addDocument.clientId = "client2";
+//                delete addDocument.content;
+//                ws2.send( JSON.stringify ( addDocument ) );
+//            });
+
+//        ws1.onopen = function( evt ) {
+//            console.log( 'ws1' );
+//            ws1.send( JSON.stringify ( addDocument ) );
+//        };
+//
+//        ws2.onopen = function( evt ) {
+//            console.log( 'ws2' );
+//            addDocument.clientId = "client2";
+//            delete addDocument.content;
+//            ws2.send( JSON.stringify ( addDocument ) );
+//        };
 
         var counter1 = 0;
-        ws.onmessage = function( evt ) {
+        ws1.onmessage = function( evt ) {
             var json = JSON.parse( evt.data );
+            console.log('ws1: ', counter1);
             switch ( counter1 ) {
                 case 0:
                     equal( json.msgType, 'patch', 'A patch should return a patch message type' );
@@ -52,6 +81,7 @@
         var counter2 = 0;
         ws2.onmessage = function( evt ) {
             var json = JSON.parse( evt.data );
+            console.log('ws2: ', counter2);
             switch ( counter2 ) {
                 case 0:
                     equal( json.msgType, 'patch', 'A patch should return a patch message type' );
@@ -59,7 +89,7 @@
                     equal( json.edits[0].clientVersion, -1, 'The clientVersion should be -1 indicating that the document was seeded by a different client.' );
                     equal( json.edits[0].diffs[0].operation, 'UNCHANGED', 'The client that sent the patch msg should also recieve a patch back.' );
                     equal( json.edits[0].diffs[0].text, 'Do or do not, there is no try.', 'The text should match the base document version.' );
-                    ws.send( JSON.stringify ( clientEdits ) );
+                    ws1.send( JSON.stringify ( clientEdits ) );
                     break;
                 case 1:
                     equal( json.msgType, 'patch', 'The server should have generated an edit' );
@@ -79,7 +109,7 @@
             counter2++
         };
 
-        ws.onerror = function( e ) {
+        ws1.onerror = function( e ) {
             ok( false, 'WS client1 failed to connect to WebSocket server [' + url + ']' );
             start();
         };
