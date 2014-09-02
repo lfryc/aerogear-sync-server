@@ -4,6 +4,16 @@
 
 
     asyncTest( 'patch - simulate a sync update/patch', function () {
+        expect( 20 );
+
+        // monkey-patch WebSocket.send() so that it logs all the sent data to console
+        (function( send ) {
+            WebSocket.prototype.send = function( data ) {
+                console.debug( 'WebSocket.send', data );
+                return send.call( this, data );
+            }
+        })( WebSocket.prototype.send );
+
         var documentId = uuid();
         var clientId = "client1";
         var addDocument = { msgType: 'add', id: documentId, clientId: clientId, content: 'Do or do not, there is no try.' };
@@ -31,39 +41,37 @@
             });
         }
 
-        Promise.all( [ promiseOpened( ws1 ), promiseOpened( ws2 ) ] )
-            .then( function( ws ) {
-                ws[0].send( JSON.stringify ( addDocument ) );
-                console.log('ws1: init');
+        var documentInitiatedByFirstSocket = false;
 
+        Promise.all( [ promiseOpened( ws1 ), promiseOpened( ws2 ) ] )
+            .then( function() {
+                console.log('ws1: init');
+                ws1.send(JSON.stringify(addDocument));
+
+                return new Promise( function( resolve, reject ) {
+                    (function wait() {
+                        if (documentInitiatedByFirstSocket) {
+                            resolve();
+                        } else {
+                            window.setTimeout(wait, 0);
+                        }
+                    })();
+                });
+            })
+            .then( function() {
+                console.log('ws2: init');
                 addDocument.clientId = "client2";
                 delete addDocument.content;
-                ws[1].send( JSON.stringify ( addDocument ) );
-                console.log('ws2: init');
+                ws2.send( JSON.stringify ( addDocument ) );
+                console.log('ws2: sent');
             });
-//            .then( function( ws1, ws2 ) {
-//                debugger;
-//                addDocument.clientId = "client2";
-//                delete addDocument.content;
-//                ws2.send( JSON.stringify ( addDocument ) );
-//            });
-
-//        ws1.onopen = function( evt ) {
-//            console.log( 'ws1' );
-//            ws1.send( JSON.stringify ( addDocument ) );
-//        };
-//
-//        ws2.onopen = function( evt ) {
-//            console.log( 'ws2' );
-//            addDocument.clientId = "client2";
-//            delete addDocument.content;
-//            ws2.send( JSON.stringify ( addDocument ) );
-//        };
 
         var counter1 = 0;
         ws1.onmessage = function( evt ) {
+            documentInitiatedByFirstSocket = true;
+
+            console.log('ws1: onmessage ', counter1);
             var json = JSON.parse( evt.data );
-            console.log('ws1: ', counter1);
             switch ( counter1 ) {
                 case 0:
                     equal( json.msgType, 'patch', 'A patch should return a patch message type' );
@@ -80,8 +88,8 @@
 
         var counter2 = 0;
         ws2.onmessage = function( evt ) {
+            console.log('ws2: onmessage ', counter2);
             var json = JSON.parse( evt.data );
-            console.log('ws2: ', counter2);
             switch ( counter2 ) {
                 case 0:
                     equal( json.msgType, 'patch', 'A patch should return a patch message type' );
@@ -116,6 +124,7 @@
 
         ws2.onerror = function( e ) {
             ok( false, 'WS client2 failed to connect to WebSocket server [' + url + ']' );
+            start();
         };
     });
 
