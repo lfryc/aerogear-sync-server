@@ -11,7 +11,7 @@ public class DefaultBackupShadowDocument<T> implements BackupShadowDocument<T> {
     }
 
     @Override
-    public long version() {
+    public long backupVersion() {
         return version;
     }
 

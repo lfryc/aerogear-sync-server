@@ -257,7 +257,7 @@ public class ServerSyncEngine<T> {
         final BackupShadowDocument<T> backup = getBackupShadowDocument(edit.documentId(), edit.clientId());
         if (serverVersionMatch(backup, edit)) {
             final ShadowDocument<T> patchedShadow = synchronizer.patchShadow(edit,
-                    newShadowDoc(backup.version(), shadow.clientVersion(), backup.shadow().document()));
+                    newShadowDoc(backup.backupVersion(), shadow.clientVersion(), backup.shadow().document()));
             dataStore.removeEdits(edit.documentId(), edit.clientId());
             return saveShadow(incrementClientVersion(patchedShadow));
         } else {
@@ -276,7 +276,7 @@ public class ServerSyncEngine<T> {
     }
 
     private boolean serverVersionMatch(final BackupShadowDocument<T> backup, final Edit edit) {
-        return backup.version() == edit.serverVersion();
+        return backup.backupVersion() == edit.serverVersion();
     }
 
     private boolean droppedServerPacket(final Edit edit, final ShadowDocument<T> shadowDocument) {
@@ -353,7 +353,7 @@ public class ServerSyncEngine<T> {
     }
 
     private boolean saveDocument(final Document<T> document) {
-        return dataStore.saveDocument(document);
+        return dataStore.initDocument(document);
     }
 
     private void updateDocument(final Document<T> document) {

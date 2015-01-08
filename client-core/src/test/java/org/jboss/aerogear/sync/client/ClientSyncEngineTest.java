@@ -53,7 +53,7 @@ public class ClientSyncEngineTest {
         assertThat(shadowDocument.document().content(), equalTo(originalVersion));
 
         final BackupShadowDocument<String> backupShadowDocument = dataStore.getBackupShadowDocument(documentId, clientId);
-        assertThat(backupShadowDocument.version(), is(0L));
+        assertThat(backupShadowDocument.backupVersion(), is(0L));
         assertThat(backupShadowDocument.shadow(), equalTo(shadowDocument));
     }
     
@@ -193,7 +193,7 @@ public class ClientSyncEngineTest {
         assertThat(shadowDocument.serverVersion(), is(2L));
 
         final BackupShadowDocument<String> backupShadowDocument = dataStore.getBackupShadowDocument(documentId, clientId);
-        assertThat(backupShadowDocument.version(), is(0L));
+        assertThat(backupShadowDocument.backupVersion(), is(0L));
         assertThat(backupShadowDocument.shadow().document().content(), equalTo(finalVersion));
     }
 
@@ -220,7 +220,7 @@ public class ClientSyncEngineTest {
         assertThat(shadowDocument.serverVersion(), is(1L));
 
         final BackupShadowDocument<String> backupShadowDocument = dataStore.getBackupShadowDocument(documentId, clientId);
-        assertThat(backupShadowDocument.version(), is(0L));
+        assertThat(backupShadowDocument.backupVersion(), is(0L));
 
         // simulate an client side diff that would update the client shadow.
         dataStore.saveShadowDocument(shadowDoc(documentId, clientId, 1L, 1L, "Do or do nothing, there is not trying"));
@@ -243,7 +243,7 @@ public class ClientSyncEngineTest {
         assertThat(shadowDocument2.serverVersion(), is(1L));
 
         final BackupShadowDocument<String> backupShadowDocument2 = dataStore.getBackupShadowDocument(documentId, clientId);
-        assertThat(backupShadowDocument2.version(), is(0L));
+        assertThat(backupShadowDocument2.backupVersion(), is(0L));
         assertThat(backupShadowDocument2.shadow().document().content(), equalTo(finalVersion));
 
         final Queue<Edit> edits = dataStore.getEdits(documentId, clientId);

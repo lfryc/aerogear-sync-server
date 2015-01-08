@@ -17,7 +17,7 @@ public interface ServerDataStore<T> extends DataStore<T> {
      * @param document the {@link Document} to save.
      * @return {code boolean} true if the document was stored to the underlying store.
      */
-    boolean saveDocument(Document<T> document);
+    boolean initDocument(Document<T> document);
 
     /**
      * Updates a server document.

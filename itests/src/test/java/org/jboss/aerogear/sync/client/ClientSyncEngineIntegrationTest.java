@@ -73,7 +73,7 @@ public class ClientSyncEngineIntegrationTest {
         assertThat(shadowDocument.document(), equalTo(clientDocument));
 
         final BackupShadowDocument<String> backupShadowDocument = dataStore.getBackupShadowDocument(docId, clientId);
-        assertThat(backupShadowDocument.version(), is(0L));
+        assertThat(backupShadowDocument.backupVersion(), is(0L));
         assertThat(backupShadowDocument.shadow(), equalTo(shadowDocument));
     }
 
@@ -183,7 +183,7 @@ public class ClientSyncEngineIntegrationTest {
         assertThat(shadowDocument.document().content(), equalTo(secondVersion));
 
         final BackupShadowDocument<String> backupShadowDocument = dataStore.getBackupShadowDocument(docId, subscriberTwo.clientId());
-        assertThat(backupShadowDocument.version(), is(0L));
+        assertThat(backupShadowDocument.backupVersion(), is(0L));
         assertThat(backupShadowDocument.shadow().document().content(), equalTo(secondVersion));
     }
 

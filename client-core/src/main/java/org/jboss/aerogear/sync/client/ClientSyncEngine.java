@@ -131,16 +131,16 @@ public class ClientSyncEngine<T> extends Observable {
         final BackupShadowDocument<T> backup = getBackupShadowDocument(edit.documentId(), edit.clientId());
         if (clientVersionMatch(edit, backup)) {
             final ShadowDocument<T> patchedShadow = clientSynchronizer.patchShadow(edit,
-                    newShadowDoc(backup.version(), shadow.clientVersion(), backup.shadow().document()));
+                    newShadowDoc(backup.backupVersion(), shadow.clientVersion(), backup.shadow().document()));
             dataStore.removeEdits(edit.documentId(), edit.clientId());
             return saveShadow(incrementServerVersion(patchedShadow), edit);
         } else {
-            throw new IllegalStateException("Backup version [" + backup.version() + "] does not match edit client version [" + edit.clientVersion() + ']');
+            throw new IllegalStateException("Backup version [" + backup.backupVersion() + "] does not match edit client version [" + edit.clientVersion() + ']');
         }
     }
 
     private boolean clientVersionMatch(final Edit edit, final BackupShadowDocument<T> backup) {
-        return edit.clientVersion() == backup.version();
+        return edit.clientVersion() == backup.backupVersion();
     }
 
     private ShadowDocument<T> saveShadowAndRemoveEdit(final ShadowDocument<T> shadow, final Edit edit) {

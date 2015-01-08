@@ -28,7 +28,7 @@ public interface BackupShadowDocument<T> {
      *
      * @return {@code long} the server version.
      */
-    long version();
+    long backupVersion();
 
     /**
      * The {@link ShadowDocument} that this instance is backing up.

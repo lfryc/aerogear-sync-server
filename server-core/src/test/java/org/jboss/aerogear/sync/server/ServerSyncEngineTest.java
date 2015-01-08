@@ -115,7 +115,7 @@ public class ServerSyncEngineTest {
         assertThat(shadowDocument.document().content(), equalTo(originalVersion));
 
         final BackupShadowDocument<String> backupShadow = dataStore.getBackupShadowDocument(documentId, clientId);
-        assertThat(backupShadow.version(), is(0L));
+        assertThat(backupShadow.backupVersion(), is(0L));
         assertThat(backupShadow.shadow(), equalTo(shadowDocument));
     }
 
@@ -161,7 +161,7 @@ public class ServerSyncEngineTest {
         final BackupShadowDocument<String> backupShadow = dataStore.getBackupShadowDocument(documentId,
                 subscriber.clientId());
         assertThat(backupShadow.shadow().document().content(), equalTo(updatedVersion));
-        assertThat(backupShadow.version(), is(0L));
+        assertThat(backupShadow.backupVersion(), is(0L));
     }
 
     @Test
@@ -189,7 +189,7 @@ public class ServerSyncEngineTest {
 
         final BackupShadowDocument<String> backupShadow = dataStore.getBackupShadowDocument(documentId,
                 subscriber.clientId());
-        assertThat(backupShadow.version(), is(0L));
+        assertThat(backupShadow.backupVersion(), is(0L));
         assertThat(backupShadow.shadow().document().content(), equalTo(updatedVersion));
     }
 
@@ -230,7 +230,7 @@ public class ServerSyncEngineTest {
         final BackupShadowDocument<String> backupShadowDocument = dataStore.getBackupShadowDocument(documentId,
                 subscriber.clientId());
         assertThat(backupShadowDocument.shadow().document().content(), equalTo(secondVersion));
-        assertThat(backupShadowDocument.version(), is(0L));
+        assertThat(backupShadowDocument.backupVersion(), is(0L));
     }
 
     @Test
@@ -261,7 +261,7 @@ public class ServerSyncEngineTest {
         final BackupShadowDocument<String> backupShadowDocument = dataStore.getBackupShadowDocument(documentId,
                 subscriber.clientId());
         assertThat(backupShadowDocument.shadow().document().content(), equalTo(secondVersion));
-        assertThat(backupShadowDocument.version(), is(0L));
+        assertThat(backupShadowDocument.backupVersion(), is(0L));
 
         // simulate an server side diff that would update the server side client shadow.
         dataStore.saveShadowDocument(shadowDoc(documentId, subscriber.clientId(), 1L, 1L, thirdVersion));
