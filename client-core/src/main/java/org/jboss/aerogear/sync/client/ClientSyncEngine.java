@@ -16,6 +16,10 @@
  */
 package org.jboss.aerogear.sync.client;
 
+import java.util.Iterator;
+import java.util.Observable;
+import java.util.Queue;
+
 import org.jboss.aerogear.sync.BackupShadowDocument;
 import org.jboss.aerogear.sync.ClientDocument;
 import org.jboss.aerogear.sync.DefaultBackupShadowDocument;
@@ -26,15 +30,12 @@ import org.jboss.aerogear.sync.Edit;
 import org.jboss.aerogear.sync.PatchMessage;
 import org.jboss.aerogear.sync.ShadowDocument;
 
-import java.util.Iterator;
-import java.util.Observable;
-
 /**
  * The client side of the differential synchronization implementation.
  *
  * @param <T> The type of document that this implementation can handle.
  */
-public class ClientSyncEngine<T> extends Observable { 
+public class ClientSyncEngine<T> extends Observable {
 
     private final ClientSynchronizer<T> clientSynchronizer;
     private final ClientDataStore<T> dataStore;
@@ -50,8 +51,10 @@ public class ClientSyncEngine<T> extends Observable {
      * @param document the document to add.
      */
     public void addDocument(final ClientDocument<T> document) {
-        saveDocument(document);
-        saveBackupShadow(saveShadow(new DefaultShadowDocument<T>(0, 0, document)));
+        dataStore.saveClientDocument(document);
+        DefaultShadowDocument<T> newShadow = new DefaultShadowDocument<T>(0, 0, document);
+        dataStore.saveShadowDocument(newShadow);
+        dataStore.saveBackupShadowDocument(newBackupShadow(newShadow));
     }
 
     /**
@@ -69,11 +72,11 @@ public class ClientSyncEngine<T> extends Observable {
      * @return {@link PatchMessage} containing the edits for the changes in the document.
      */
     public PatchMessage diff(final ClientDocument<T> document) {
-        final ShadowDocument<T> shadow = getShadowDocument(document.id(), document.clientId());
-        final Edit edit = serverDiff(document, shadow);
-        saveEdits(edit);
+        final ShadowDocument<T> shadow = dataStore.getShadowDocument(document.id(), document.clientId());
+        final Edit edit = clientSynchronizer.serverDiff(document, shadow);
+        dataStore.saveEdits(edit);
         final ShadowDocument<T> patchedShadow = diffPatchShadow(shadow, edit);
-        saveShadow(incrementClientVersion(patchedShadow));
+        dataStore.saveShadowDocument(incrementClientVersion(patchedShadow));
         return getPendingEdits(document.id(), document.clientId());
     }
 
@@ -89,16 +92,20 @@ public class ClientSyncEngine<T> extends Observable {
     public void patch(final PatchMessage patchMessage) {
         final ShadowDocument<T> patchedShadow = patchShadow(patchMessage);
         patchDocument(patchedShadow);
-        saveBackupShadow(patchedShadow);
+        dataStore.saveBackupShadowDocument(newBackupShadow(patchedShadow));
     }
 
     private ShadowDocument<T> diffPatchShadow(final ShadowDocument<T> shadow, final Edit edit) {
         return clientSynchronizer.patchShadow(edit, shadow);
     }
 
+    private PatchMessage getPendingEdits(final String documentId, final String clientId) {
+        Queue<Edit> edits = dataStore.getEdits(documentId, clientId);
+        return new DefaultPatchMessage(documentId, clientId, edits);
+    }
 
     private ShadowDocument<T> patchShadow(final PatchMessage patchMessage) {
-        ShadowDocument<T> shadow = getShadowDocument(patchMessage.documentId(), patchMessage.clientId());
+        ShadowDocument<T> shadow = dataStore.getShadowDocument(patchMessage.documentId(), patchMessage.clientId());
         final Iterator<Edit> iterator = patchMessage.edits().iterator();
         while (iterator.hasNext()) {
             final Edit edit = iterator.next();
@@ -107,7 +114,8 @@ public class ClientSyncEngine<T> extends Observable {
                 continue;
             }
             if (hasServerVersion(edit, shadow)) {
-                discardEdit(edit, iterator);
+                dataStore.removeEdit(edit);
+                iterator.remove();
                 continue;
             }
             if (allVersionsMatch(edit, shadow) || isSeedVersion(edit)) {
@@ -122,18 +130,27 @@ public class ClientSyncEngine<T> extends Observable {
         return shadow;
     }
 
+    private ShadowDocument<T> saveShadowAndRemoveEdit(final ShadowDocument<T> shadow, final Edit edit) {
+        dataStore.removeEdit(edit);
+        dataStore.saveShadowDocument(shadow);
+        return shadow;
+    }
+
     private static boolean isSeedVersion(final Edit edit) {
         return edit.clientVersion() == -1;
     }
 
     private ShadowDocument<T> restoreBackup(final ShadowDocument<T> shadow,
                                             final Edit edit) {
-        final BackupShadowDocument<T> backup = getBackupShadowDocument(edit.documentId(), edit.clientId());
+        final BackupShadowDocument<T> backup = dataStore.getBackupShadowDocument(edit.documentId(), edit.clientId());
         if (clientVersionMatch(edit, backup)) {
             final ShadowDocument<T> patchedShadow = clientSynchronizer.patchShadow(edit,
-                    newShadowDoc(backup.backupVersion(), shadow.clientVersion(), backup.shadow().document()));
+                    new DefaultShadowDocument<T>(backup.backupVersion(), shadow.clientVersion(), backup.shadow().document()));
             dataStore.removeEdits(edit.documentId(), edit.clientId());
-            return saveShadow(incrementServerVersion(patchedShadow), edit);
+            ShadowDocument<T> newShadow = incrementServerVersion(patchedShadow);
+            dataStore.removeEdit(edit);
+            dataStore.saveShadowDocument(newShadow);
+            return newShadow;
         } else {
             throw new IllegalStateException("Backup version [" + backup.backupVersion() + "] does not match edit client version [" + edit.clientVersion() + ']');
         }
@@ -143,21 +160,6 @@ public class ClientSyncEngine<T> extends Observable {
         return edit.clientVersion() == backup.backupVersion();
     }
 
-    private ShadowDocument<T> saveShadowAndRemoveEdit(final ShadowDocument<T> shadow, final Edit edit) {
-        dataStore.removeEdit(edit);
-        return saveShadow(shadow);
-    }
-
-    private ShadowDocument<T> saveShadow(final ShadowDocument<T> shadow, final Edit edit) {
-        dataStore.removeEdit(edit);
-        return saveShadow(shadow);
-    }
-
-    private void discardEdit(final Edit edit, final Iterator<Edit> iterator) {
-        dataStore.removeEdit(edit);
-        iterator.remove();
-    }
-
     private boolean allVersionsMatch(final Edit edit, final ShadowDocument<T> shadow) {
         return edit.serverVersion() == shadow.serverVersion() && edit.clientVersion() == shadow.clientVersion();
     }
@@ -165,75 +167,37 @@ public class ClientSyncEngine<T> extends Observable {
     private boolean clientPacketDropped(final Edit edit, final ShadowDocument<T> shadow) {
         return edit.clientVersion() < shadow.clientVersion() && !isSeedVersion(edit);
     }
-    
+
     private boolean hasServerVersion(final Edit edit, final ShadowDocument<T> shadow) {
         return edit.serverVersion() < shadow.serverVersion();
     }
 
     private Document<T> patchDocument(final ShadowDocument<T> shadowDocument) {
         final ClientDocument<T> document = dataStore.getClientDocument(shadowDocument.document().id(), shadowDocument.document().clientId());
-        final Edit edit = clientDiff(document, shadowDocument);
+        final Edit edit = clientSynchronizer.clientDiff(document, shadowDocument);
         final ClientDocument<T> patched = clientSynchronizer.patchDocument(edit, document);
-        saveDocument(patched);
-        saveBackupShadow(shadowDocument);
+        dataStore.saveClientDocument(patched);
+        dataStore.saveBackupShadowDocument(newBackupShadow(shadowDocument));
         setChanged();
         notifyObservers(patched);
         return patched;
     }
 
-    private ShadowDocument<T> getShadowDocument(final String documentId, final String clientId) {
-        return dataStore.getShadowDocument(documentId, clientId);
-    }
-
-    private BackupShadowDocument<T> getBackupShadowDocument(final String documentId, final String clientId) {
-        return dataStore.getBackupShadowDocument(documentId, clientId);
-    }
-
-    private PatchMessage getPendingEdits(final String documentId, final String clientId) {
-        return new DefaultPatchMessage(documentId, clientId, dataStore.getEdits(documentId, clientId));
-    }
-
-    private Edit clientDiff(final ClientDocument<T> doc, final ShadowDocument<T> shadow) {
-        return clientSynchronizer.clientDiff(doc, shadow);
-    }
-    
-    private Edit serverDiff(final ClientDocument<T> doc, final ShadowDocument<T> shadow) {
-        return clientSynchronizer.serverDiff(doc, shadow);
-    }
-
-    private void saveEdits(final Edit edit) {
-        dataStore.saveEdits(edit);
-    }
-
     private ShadowDocument<T> incrementClientVersion(final ShadowDocument<T> shadow) {
         final long clientVersion = shadow.clientVersion() + 1;
-        return newShadowDoc(shadow.serverVersion(), clientVersion, shadow.document());
+        return new DefaultShadowDocument<T>(shadow.serverVersion(), clientVersion, shadow.document());
     }
 
     private ShadowDocument<T> withClientVersion(final ShadowDocument<T> shadow, final long clientVersion) {
-        return newShadowDoc(shadow.serverVersion(), clientVersion, shadow.document());
-    }
-
-    private ShadowDocument<T> saveShadow(final ShadowDocument<T> newShadow) {
-        dataStore.saveShadowDocument(newShadow);
-        return newShadow;
-    }
-
-    private ShadowDocument<T> newShadowDoc(final long serverVersion, final long clientVersion, final ClientDocument<T> doc) {
-        return new DefaultShadowDocument<T>(serverVersion, clientVersion, doc);
+        return new DefaultShadowDocument<T>(shadow.serverVersion(), clientVersion, shadow.document());
     }
 
     private ShadowDocument<T> incrementServerVersion(final ShadowDocument<T> shadow) {
         final long serverVersion = shadow.serverVersion() + 1;
-        return newShadowDoc(serverVersion, shadow.clientVersion(), shadow.document());
+        return new DefaultShadowDocument<T>(serverVersion, shadow.clientVersion(), shadow.document());
     }
 
-    private void saveBackupShadow(final ShadowDocument<T> newShadow) {
-        dataStore.saveBackupShadowDocument(new DefaultBackupShadowDocument<T>(newShadow.clientVersion(), newShadow));
+    private DefaultBackupShadowDocument<T> newBackupShadow(final ShadowDocument<T> shadow) {
+        return new DefaultBackupShadowDocument<T>(shadow.clientVersion(), shadow);
     }
-
-    private void saveDocument(final ClientDocument<T> document) {
-        dataStore.saveClientDocument(document);
-    }
-
 }
