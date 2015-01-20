@@ -80,7 +80,8 @@ public class ServerSyncEngine<T> {
                 final ShadowDocument<T> shadow = addShadowForClient(document.id(), clientId);
                 logger.debug("Document with id [" + document.id() + "] already exists.");
                 final Edit edit = synchronizer.serverDiff(shadow.document(), seededShadowFrom(shadow, document));
-                dataStore.updateDocument(patchDocument(shadow));
+                final Document<T> updatedShadow = patchDocument(shadow);
+                dataStore.updateDocument(updatedShadow);
                 return new DefaultPatchMessage(document.id(), clientId, new LinkedList<Edit>(Collections.singleton(edit)));
             }
         }
@@ -174,7 +175,8 @@ public class ServerSyncEngine<T> {
      */
     public PatchMessage patch(final PatchMessage patchMessage) {
         final ShadowDocument<T> patchedShadow = patchShadow(patchMessage);
-        dataStore.updateDocument(patchDocument(patchedShadow));
+        Document<T> patchedDocument = patchDocument(patchedShadow);
+        dataStore.updateDocument(patchedDocument);
         dataStore.saveBackupShadowDocument(newBackupShadow(patchedShadow));
         return patchMessage;
     }
