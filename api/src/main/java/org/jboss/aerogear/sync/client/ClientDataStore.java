@@ -1,6 +1,7 @@
 package org.jboss.aerogear.sync.client;
 
 import org.jboss.aerogear.sync.ClientDocument;
+import org.jboss.aerogear.sync.ClientRevision;
 import org.jboss.aerogear.sync.DataStore;
 import org.jboss.aerogear.sync.Document;
 
@@ -10,7 +11,7 @@ import org.jboss.aerogear.sync.Document;
  *
  * @param <T> The type of the Document that this data store can handle.
  */
-public interface ClientDataStore<T> extends DataStore<T> {
+public interface ClientDataStore<T> extends DataStore<T, ClientRevision> {
 
     /**
      * Saves a client document.

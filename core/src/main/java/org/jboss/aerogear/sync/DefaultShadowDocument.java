@@ -18,23 +18,23 @@ package org.jboss.aerogear.sync;
 
 public class DefaultShadowDocument<T> implements ShadowDocument<T> {
 
-    private final long serverVersion;
-    private final long clientVersion;
+    private final ServerRevision serverVersion;
+    private final ClientRevision clientVersion;
     private final ClientDocument<T> document;
 
-    public DefaultShadowDocument(final long serverVersion, final long clientVersion, final ClientDocument<T> document) {
+    public DefaultShadowDocument(final ServerRevision serverVersion, final ClientRevision clientVersion, final ClientDocument<T> document) {
         this.serverVersion = serverVersion;
         this.clientVersion = clientVersion;
         this.document = document;
     }
 
     @Override
-    public long serverVersion() {
+    public ServerRevision serverVersion() {
         return serverVersion;
     }
 
     @Override
-    public long clientVersion() {
+    public ClientRevision clientVersion() {
         return clientVersion;
     }
 

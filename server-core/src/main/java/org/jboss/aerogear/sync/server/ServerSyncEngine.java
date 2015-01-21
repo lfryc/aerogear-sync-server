@@ -24,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.jboss.aerogear.sync.BackupShadowDocument;
 import org.jboss.aerogear.sync.ClientDocument;
+import org.jboss.aerogear.sync.ClientRevision;
 import org.jboss.aerogear.sync.DefaultBackupShadowDocument;
 import org.jboss.aerogear.sync.DefaultClientDocument;
 import org.jboss.aerogear.sync.DefaultPatchMessage;
@@ -31,6 +32,7 @@ import org.jboss.aerogear.sync.DefaultShadowDocument;
 import org.jboss.aerogear.sync.Document;
 import org.jboss.aerogear.sync.Edit;
 import org.jboss.aerogear.sync.PatchMessage;
+import org.jboss.aerogear.sync.ServerRevision;
 import org.jboss.aerogear.sync.ShadowDocument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,8 +45,8 @@ import org.slf4j.LoggerFactory;
 public class ServerSyncEngine<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(ServerSyncEngine.class);
-    private static final int SEEDED_CLIENT_VERSION = -1;
-    private static final int SEEDED_SERVER_VERSION = 1;
+    private static final ClientRevision SEEDED_CLIENT_VERSION = new ClientRevision(-1);
+    private static final ServerRevision SEEDED_SERVER_VERSION = new ServerRevision(1);
     private static final LinkedList<Edit> EMPTY_EDITS = new LinkedList<Edit>();
     private static final ConcurrentHashMap<String, Set<Subscriber<?>>> subscribers =
             new ConcurrentHashMap<String, Set<Subscriber<?>>>();
@@ -283,7 +285,7 @@ public class ServerSyncEngine<T> {
 
     private ShadowDocument<T> restoreBackup(final ShadowDocument<T> shadow,
                                             final Edit edit) {
-        final BackupShadowDocument<T> backup = dataStore.getBackupShadowDocument(edit.documentId(), edit.clientId());
+        final BackupShadowDocument<T, ServerRevision> backup = dataStore.getBackupShadowDocument(edit.documentId(), edit.clientId());
         if (serverVersionMatch(backup, edit)) {
             final ShadowDocument<T> patchedShadow = synchronizer.patchShadow(edit,
                     new DefaultShadowDocument<T>(backup.backupVersion(), shadow.clientVersion(), backup.shadow().document()));
@@ -319,7 +321,7 @@ public class ServerSyncEngine<T> {
         return new DefaultShadowDocument<T>(serverVersion, shadow.clientVersion(), shadow.document());
     }
 
-    private DefaultBackupShadowDocument<T> newBackupShadow(final ShadowDocument<T> shadow) {
-        return new DefaultBackupShadowDocument<T>(shadow.serverVersion(), shadow);
+    private DefaultBackupShadowDocument<T, ServerRevision> newBackupShadow(final ShadowDocument<T> shadow) {
+        return new DefaultBackupShadowDocument<T, ServerRevision>(shadow.serverVersion(), shadow);
     }
 }

@@ -22,12 +22,14 @@ import java.util.Queue;
 
 import org.jboss.aerogear.sync.BackupShadowDocument;
 import org.jboss.aerogear.sync.ClientDocument;
+import org.jboss.aerogear.sync.ClientRevision;
 import org.jboss.aerogear.sync.DefaultBackupShadowDocument;
 import org.jboss.aerogear.sync.DefaultPatchMessage;
 import org.jboss.aerogear.sync.DefaultShadowDocument;
 import org.jboss.aerogear.sync.Document;
 import org.jboss.aerogear.sync.Edit;
 import org.jboss.aerogear.sync.PatchMessage;
+import org.jboss.aerogear.sync.ServerRevision;
 import org.jboss.aerogear.sync.ShadowDocument;
 
 /**
@@ -52,7 +54,7 @@ public class ClientSyncEngine<T> extends Observable {
      */
     public void addDocument(final ClientDocument<T> document) {
         dataStore.saveClientDocument(document);
-        DefaultShadowDocument<T> newShadow = new DefaultShadowDocument<T>(0, 0, document);
+        DefaultShadowDocument<T> newShadow = new DefaultShadowDocument<T>(new ServerRevision(0), new ClientRevision(0), document);
         dataStore.saveShadowDocument(newShadow);
         dataStore.saveBackupShadowDocument(newBackupShadow(newShadow));
     }
@@ -197,7 +199,7 @@ public class ClientSyncEngine<T> extends Observable {
         return new DefaultShadowDocument<T>(serverVersion, shadow.clientVersion(), shadow.document());
     }
 
-    private DefaultBackupShadowDocument<T> newBackupShadow(final ShadowDocument<T> shadow) {
-        return new DefaultBackupShadowDocument<T>(shadow.clientVersion(), shadow);
+    private DefaultBackupShadowDocument<T, ClientRevision> newBackupShadow(final ShadowDocument<T> shadow) {
+        return new DefaultBackupShadowDocument<T, ClientRevision>(shadow.clientVersion(), shadow);
     }
 }

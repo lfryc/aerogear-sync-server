@@ -16,6 +16,12 @@
  */
 package org.jboss.aerogear.sync;
 
+import java.io.IOException;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
+import org.jboss.aerogear.sync.DefaultEdit.Builder;
+
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.ObjectCodec;
@@ -29,11 +35,6 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.jboss.aerogear.sync.DefaultEdit.Builder;
-
-import java.io.IOException;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 public final class JsonMapper {
 
@@ -128,8 +129,8 @@ public final class JsonMapper {
                         continue;
                     }
                     final Builder eb = DefaultEdit.withDocumentId(documentId).clientId(clientId);
-                    eb.clientVersion(edit.get("clientVersion").asLong());
-                    eb.serverVersion(edit.get("serverVersion").asLong());
+                    eb.clientVersion(new ClientRevision(edit.get("clientVersion").asLong()));
+                    eb.serverVersion(new ServerRevision(edit.get("serverVersion").asLong()));
                     eb.checksum(edit.get("checksum").asText());
                     final JsonNode diffsNode = edit.get("diffs");
                     if (diffsNode.isArray()) {
@@ -165,8 +166,8 @@ public final class JsonMapper {
                 jgen.writeStartObject();
                 jgen.writeStringField("clientId", edit.clientId());
                 jgen.writeStringField("id", edit.documentId());
-                jgen.writeNumberField("clientVersion", edit.clientVersion());
-                jgen.writeNumberField("serverVersion", edit.serverVersion());
+                jgen.writeNumberField("clientVersion", edit.clientVersion().version());
+                jgen.writeNumberField("serverVersion", edit.serverVersion().version());
                 jgen.writeStringField("checksum", edit.checksum());
                 jgen.writeArrayFieldStart("diffs");
                 if (!edit.diffs().isEmpty()) {
@@ -193,8 +194,8 @@ public final class JsonMapper {
             final JsonNode edit = oc.readTree(jp);
             final Builder eb = DefaultEdit.withDocumentId(edit.get("id").asText());
             eb.clientId(edit.get("clientId").asText());
-            eb.clientVersion(edit.get("clientVersion").asLong());
-            eb.serverVersion(edit.get("serverVersion").asLong());
+            eb.clientVersion(new ClientRevision(edit.get("clientVersion").asLong()));
+            eb.serverVersion(new ServerRevision(edit.get("serverVersion").asLong()));
             eb.checksum(edit.get("checksum").asText());
             final JsonNode diffsNode = edit.get("diffs");
             if (diffsNode.isArray()) {
@@ -216,8 +217,8 @@ public final class JsonMapper {
             jgen.writeStringField("msgType", "patch");
             jgen.writeStringField("clientId", edit.clientId());
             jgen.writeStringField("id", edit.documentId());
-            jgen.writeNumberField("clientVersion", edit.clientVersion());
-            jgen.writeNumberField("serverVersion", edit.serverVersion());
+            jgen.writeNumberField("clientVersion", edit.clientVersion().version());
+            jgen.writeNumberField("serverVersion", edit.serverVersion().version());
             jgen.writeStringField("checksum", edit.checksum());
             jgen.writeArrayFieldStart("diffs");
             if (!edit.diffs().isEmpty()) {

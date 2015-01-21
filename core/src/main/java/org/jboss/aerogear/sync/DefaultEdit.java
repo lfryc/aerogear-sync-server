@@ -16,16 +16,16 @@
  */
 package org.jboss.aerogear.sync;
 
-import org.jboss.aerogear.sync.Diff.Operation;
-
 import java.util.LinkedList;
+
+import org.jboss.aerogear.sync.Diff.Operation;
 
 public class DefaultEdit implements Edit {
 
     private final String clientId;
     private final String documentId;
-    private final long clientVersion;
-    private final long serverVersion;
+    private final ClientRevision clientVersion;
+    private final ServerRevision serverVersion;
     private final String checksum;
     private final LinkedList<Diff> diffs;
 
@@ -49,12 +49,12 @@ public class DefaultEdit implements Edit {
     }
 
     @Override
-    public long clientVersion() {
+    public ClientRevision clientVersion() {
         return clientVersion;
     }
 
     @Override
-    public long serverVersion() {
+    public ServerRevision serverVersion() {
         return serverVersion;
     }
 
@@ -69,52 +69,52 @@ public class DefaultEdit implements Edit {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        final DefaultEdit that = (DefaultEdit) o;
-
-        if (clientVersion != that.clientVersion) {
-            return false;
-        }
-        if (serverVersion != that.serverVersion) {
-            return false;
-        }
-        if (!checksum.equals(that.checksum)) {
-            return false;
-        }
-        if (!clientId.equals(that.clientId)) {
-            return false;
-        }
-        if (!diffs.equals(that.diffs)) {
-            return false;
-        }
-        return !documentId.equals(that.documentId);
-    }
-
-    @Override
     public int hashCode() {
-        int result = clientId.hashCode();
-        result = 31 * result + documentId.hashCode();
-        result = 31 * result + (int) (clientVersion ^ clientVersion >>> 32);
-        result = 31 * result + (int) (serverVersion ^ serverVersion >>> 32);
-        result = 31 * result + checksum.hashCode();
-        result = 31 * result + diffs.hashCode();
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((clientId == null) ? 0 : clientId.hashCode());
+        result = prime * result + ((clientVersion == null) ? 0 : clientVersion.hashCode());
+        result = prime * result + ((diffs == null) ? 0 : diffs.hashCode());
+        result = prime * result + ((documentId == null) ? 0 : documentId.hashCode());
+        result = prime * result + ((serverVersion == null) ? 0 : serverVersion.hashCode());
         return result;
     }
 
     @Override
-    public String toString() {
-        return "DefaultEdit[documentId=" + documentId  +
-                ", clientId=" + clientId +
-                ", serverVersion=" + serverVersion +
-                ", clientVersion=" + clientVersion +
-                ", diffs=" + diffs + ']';
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        DefaultEdit other = (DefaultEdit) obj;
+        if (clientId == null) {
+            if (other.clientId != null)
+                return false;
+        } else if (!clientId.equals(other.clientId))
+            return false;
+        if (clientVersion == null) {
+            if (other.clientVersion != null)
+                return false;
+        } else if (!clientVersion.equals(other.clientVersion))
+            return false;
+        if (diffs == null) {
+            if (other.diffs != null)
+                return false;
+        } else if (!diffs.equals(other.diffs))
+            return false;
+        if (documentId == null) {
+            if (other.documentId != null)
+                return false;
+        } else if (!documentId.equals(other.documentId))
+            return false;
+        if (serverVersion == null) {
+            if (other.serverVersion != null)
+                return false;
+        } else if (!serverVersion.equals(other.serverVersion))
+            return false;
+        return true;
     }
 
     public static Builder withDocumentId(final String documentId) {
@@ -125,8 +125,8 @@ public class DefaultEdit implements Edit {
 
         private final String documentId;
         private String clientId;
-        private long serverVersion;
-        private long clientVersion;
+        private ServerRevision serverVersion;
+        private ClientRevision clientVersion;
         private String checksum;
         private final LinkedList<Diff> diffs = new LinkedList<Diff>();
 
@@ -143,12 +143,12 @@ public class DefaultEdit implements Edit {
             return this;
         }
 
-        public Builder serverVersion(final long serverVersion) {
+        public Builder serverVersion(final ServerRevision serverVersion) {
             this.serverVersion = serverVersion;
             return this;
         }
 
-        public Builder clientVersion(final long clientVersion) {
+        public Builder clientVersion(final ClientRevision clientVersion) {
             this.clientVersion = clientVersion;
             return this;
         }

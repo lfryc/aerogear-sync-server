@@ -16,12 +16,6 @@
  */
 package org.jboss.aerogear.sync.server;
 
-import org.jboss.aerogear.sync.BackupShadowDocument;
-import org.jboss.aerogear.sync.ClientDocument;
-import org.jboss.aerogear.sync.Document;
-import org.jboss.aerogear.sync.Edit;
-import org.jboss.aerogear.sync.ShadowDocument;
-
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -29,32 +23,40 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 
+import org.jboss.aerogear.sync.BackupShadowDocument;
+import org.jboss.aerogear.sync.ClientRevision;
+import org.jboss.aerogear.sync.Document;
+import org.jboss.aerogear.sync.Edit;
+import org.jboss.aerogear.sync.ServerRevision;
+import org.jboss.aerogear.sync.ShadowDocument;
+
 public class ServerInMemoryDataStore implements ServerDataStore<String> {
 
     private static final Queue<Edit> EMPTY_QUEUE = new LinkedList<Edit>();
     private final ConcurrentMap<String, Document<String>> documents = new ConcurrentHashMap<String, Document<String>>();
-    private final ConcurrentMap<Id, ShadowDocument<String>> shadows = new ConcurrentHashMap<Id, ShadowDocument<String>>();
-    private final ConcurrentMap<Id, BackupShadowDocument<String>> backups = new ConcurrentHashMap<Id, BackupShadowDocument<String>>();
+    private final ConcurrentMap<ShadowId, ShadowDocument<String>> shadows = new ConcurrentHashMap<ShadowId, ShadowDocument<String>>();
+    private final ConcurrentMap<BackupId, BackupShadowDocument<String, ServerRevision>> backups = new ConcurrentHashMap<BackupId, BackupShadowDocument<String, ServerRevision>>();
     private final ConcurrentHashMap<Id, Queue<Edit>> pendingEdits = new ConcurrentHashMap<Id, Queue<Edit>>();
 
     @Override
     public void saveShadowDocument(final ShadowDocument<String> shadowDocument) {
-        shadows.put(id(shadowDocument.document()), shadowDocument);
+        shadows.put(id(shadowDocument.document().id(), shadowDocument.clientVersion(), shadowDocument.serverVersion()), shadowDocument);
     }
 
     @Override
-    public ShadowDocument<String> getShadowDocument(final String documentId, final String clientId) {
-        return shadows.get(id(documentId, clientId));
+    public ShadowDocument<String> getShadowDocument(final String documentId, ClientRevision clientRevision,
+            ServerRevision serverRevision) {
+        return shadows.get(id(documentId, clientRevision, serverRevision));
     }
 
     @Override
-    public void saveBackupShadowDocument(final BackupShadowDocument<String> backupShadow) {
-        backups.put(id(backupShadow.shadow().document()), backupShadow);
+    public void saveBackupShadowDocument(final BackupShadowDocument<String, ServerRevision> backupShadow) {
+        backups.put(id(backupShadow.shadow().document().id(), backupShadow.backupVersion()), backupShadow);
     }
 
     @Override
-    public BackupShadowDocument<String> getBackupShadowDocument(final String documentId, final String clientId) {
-        return backups.get(id(documentId, clientId));
+    public BackupShadowDocument<String, ServerRevision> getBackupShadowDocument(final String documentId, ServerRevision serverRevision) {
+        return backups.get(id(documentId, serverRevision));
     }
 
     @Override
@@ -135,12 +137,16 @@ public class ServerInMemoryDataStore implements ServerDataStore<String> {
         pendingEdits.remove(id(documentId, clientId));
     }
 
-    private static Id id(final ClientDocument<String> document) {
-        return id(document.id(), document.clientId());
-    }
-
     private static Id id(final String documentId, final String clientId) {
         return new Id(documentId, clientId);
+    }
+
+    private static ShadowId id(final String documentId, ClientRevision clientRevision, ServerRevision serverRevision) {
+        return new ShadowId(documentId, clientRevision, serverRevision);
+    }
+
+    private static BackupId id(final String documentId, ServerRevision serverRevision) {
+        return new BackupId(documentId, serverRevision);
     }
 
     private static class Id {
@@ -183,6 +189,121 @@ public class ServerInMemoryDataStore implements ServerDataStore<String> {
             int result = clientId != null ? clientId.hashCode() : 0;
             result = 31 * result + (documentId != null ? documentId.hashCode() : 0);
             return result;
+        }
+    }
+
+    private static class ShadowId {
+
+        private final String documentId;
+        private final ClientRevision clientRevision;
+        private final ServerRevision serverRevision;
+
+        public ShadowId(String documentId, ClientRevision clientRevision, ServerRevision serverRevision) {
+            super();
+            this.documentId = documentId;
+            this.clientRevision = clientRevision;
+            this.serverRevision = serverRevision;
+        }
+
+        public String getDocumentId() {
+            return documentId;
+        }
+
+        public ClientRevision getClientRevision() {
+            return clientRevision;
+        }
+
+        public ServerRevision getServerRevision() {
+            return serverRevision;
+        }
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + ((clientRevision == null) ? 0 : clientRevision.hashCode());
+            result = prime * result + ((documentId == null) ? 0 : documentId.hashCode());
+            result = prime * result + ((serverRevision == null) ? 0 : serverRevision.hashCode());
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            ShadowId other = (ShadowId) obj;
+            if (clientRevision == null) {
+                if (other.clientRevision != null)
+                    return false;
+            } else if (!clientRevision.equals(other.clientRevision))
+                return false;
+            if (documentId == null) {
+                if (other.documentId != null)
+                    return false;
+            } else if (!documentId.equals(other.documentId))
+                return false;
+            if (serverRevision == null) {
+                if (other.serverRevision != null)
+                    return false;
+            } else if (!serverRevision.equals(other.serverRevision))
+                return false;
+            return true;
+        }
+
+    }
+
+    private static class BackupId {
+
+        private final String documentId;
+        private final ServerRevision serverRevision;
+
+        public BackupId(String documentId, ServerRevision serverRevision) {
+            super();
+            this.documentId = documentId;
+            this.serverRevision = serverRevision;
+        }
+
+        public String getDocumentId() {
+            return documentId;
+        }
+
+        public ServerRevision getServerRevision() {
+            return serverRevision;
+        }
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + ((documentId == null) ? 0 : documentId.hashCode());
+            result = prime * result + ((serverRevision == null) ? 0 : serverRevision.hashCode());
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            BackupId other = (BackupId) obj;
+            if (documentId == null) {
+                if (other.documentId != null)
+                    return false;
+            } else if (!documentId.equals(other.documentId))
+                return false;
+            if (serverRevision == null) {
+                if (other.serverRevision != null)
+                    return false;
+            } else if (!serverRevision.equals(other.serverRevision))
+                return false;
+            return true;
         }
     }
 }

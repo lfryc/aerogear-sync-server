@@ -2,6 +2,7 @@ package org.jboss.aerogear.sync.server;
 
 import org.jboss.aerogear.sync.DataStore;
 import org.jboss.aerogear.sync.Document;
+import org.jboss.aerogear.sync.ServerRevision;
 
 /**
  * A server side DataStore implementation is responsible for storing and serving data for a
@@ -9,7 +10,7 @@ import org.jboss.aerogear.sync.Document;
  *
  * @param <T> The type of the Document that this data store can handle.
  */
-public interface ServerDataStore<T> extends DataStore<T> {
+public interface ServerDataStore<T> extends DataStore<T, ServerRevision> {
 
     /**
      * Saves a server document.
@@ -33,5 +34,4 @@ public interface ServerDataStore<T> extends DataStore<T> {
      * @return {@link Document} the document matching the documentId.
      */
     Document<T> getDocument(String documentId);
-
 }

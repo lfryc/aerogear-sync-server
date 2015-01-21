@@ -8,7 +8,7 @@ import java.util.Queue;
  *
  * @param <T> The type of the Document that this data store can handle.
  */
-public interface DataStore<T> {
+public interface DataStore<T, BackupRevision extends Revision> {
 
     /**
      * Saves a shadow document.
@@ -24,14 +24,14 @@ public interface DataStore<T> {
      * @param clientId the client for which to retrieve the shadow document.
      * @return {@link ShadowDocument} the shadow document matching the documentId.
      */
-    ShadowDocument<T> getShadowDocument(String documentId, ServerRevision serverRevision, ClientRevision clientRevision);
+    ShadowDocument<T> getShadowDocument(String documentId, ClientRevision clientRevision, ServerRevision serverRevision);
 
     /**
      * Saves a backup shadow document
      *
      * @param backupShadow the {@link BackupShadowDocument} to save.
      */
-    void saveBackupShadowDocument(BackupShadowDocument<T> backupShadow);
+    void saveBackupShadowDocument(BackupShadowDocument<T, BackupRevision> backupShadow);
 
     /**
      * Retrieves the {@link BackupShadowDocument} matching the passed-in document documentId.
@@ -40,7 +40,7 @@ public interface DataStore<T> {
      * @param clientId the client identifier for which to fetch the document.
      * @return {@link BackupShadowDocument} the backup shadow document matching the documentId.
      */
-    BackupShadowDocument<T> getBackupShadowDocument(String documentId, ServerRevision serverRevision);
+    BackupShadowDocument<T, BackupRevision> getBackupShadowDocument(String documentId, BackupRevision backupRevision);
 
     /**
      * Saves an {@link Edit} to the data store.
