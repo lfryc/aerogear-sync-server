@@ -24,7 +24,7 @@ public interface DataStore<T> {
      * @param clientId the client for which to retrieve the shadow document.
      * @return {@link ShadowDocument} the shadow document matching the documentId.
      */
-    ShadowDocument<T> getShadowDocument(String documentId, String clientId);
+    ShadowDocument<T> getShadowDocument(String documentId, ServerRevision serverRevision, ClientRevision clientRevision);
 
     /**
      * Saves a backup shadow document
@@ -40,7 +40,7 @@ public interface DataStore<T> {
      * @param clientId the client identifier for which to fetch the document.
      * @return {@link BackupShadowDocument} the backup shadow document matching the documentId.
      */
-    BackupShadowDocument<T> getBackupShadowDocument(String documentId, String clientId);
+    BackupShadowDocument<T> getBackupShadowDocument(String documentId, ServerRevision serverRevision);
 
     /**
      * Saves an {@link Edit} to the data store.

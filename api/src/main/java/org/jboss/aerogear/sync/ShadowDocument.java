@@ -32,14 +32,14 @@ public interface ShadowDocument<T> {
      *
      * @return {@code long} the server version.
      */
-    long serverVersion();
+    ServerRevision serverVersion();
 
     /**
      * Represents the latest client version that this shadow document was based on.
      *
      * @return {@code long} the client version.
      */
-    long clientVersion();
+    ClientRevision clientVersion();
 
     /**
      * The document itself.

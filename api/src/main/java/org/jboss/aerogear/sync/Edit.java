@@ -42,14 +42,14 @@ public interface Edit {
      *
      * @return {@code long} the client version that this edit is based on.
      */
-    long clientVersion();
+    ClientRevision clientVersion();
 
     /**
      * The server version that edit is related to.
      *
      * @return {@code long} the server version that this edit is based on.
      */
-    long serverVersion();
+    ServerRevision serverVersion();
 
     /**
      * A checksum of the opposing sides shadow document.
