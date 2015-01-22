@@ -107,7 +107,7 @@ public class ClientInMemoryDataStore implements ClientDataStore<String> {
             newEdits.addAll(currentEdits);
             for (Iterator<Edit> iter = newEdits.iterator(); iter.hasNext();) {
                 final Edit oldEdit = iter.next();
-                if (oldEdit.clientVersion() <= edit.clientVersion()) {
+                if (oldEdit.clientVersion().compareTo(edit.clientVersion()) <= 0) {
                     iter.remove();
                 }
             }

@@ -16,18 +16,29 @@
  */
 package org.jboss.aerogear.sync.client;
 
-import org.jboss.aerogear.sync.*;
-import org.jboss.aerogear.sync.Diff.Operation;
-import org.junit.Before;
-import org.junit.Test;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Queue;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
+import org.jboss.aerogear.sync.BackupShadowDocument;
+import org.jboss.aerogear.sync.ClientDocument;
+import org.jboss.aerogear.sync.ClientRevision;
+import org.jboss.aerogear.sync.DefaultClientDocument;
+import org.jboss.aerogear.sync.DefaultEdit;
+import org.jboss.aerogear.sync.DefaultPatchMessage;
+import org.jboss.aerogear.sync.DefaultShadowDocument;
+import org.jboss.aerogear.sync.Diff;
+import org.jboss.aerogear.sync.Diff.Operation;
+import org.jboss.aerogear.sync.Edit;
+import org.jboss.aerogear.sync.PatchMessage;
+import org.jboss.aerogear.sync.ServerRevision;
+import org.jboss.aerogear.sync.ShadowDocument;
+import org.junit.Before;
+import org.junit.Test;
 
 public class ClientSyncEngineTest {
 
@@ -47,16 +58,16 @@ public class ClientSyncEngineTest {
         final String originalVersion = "{\"id\": 9999}";
         engine.addDocument(clientDoc(documentId, clientId, originalVersion));
 
-        final ShadowDocument<String> shadowDocument = dataStore.getShadowDocument(documentId, clientId);
-        assertThat(shadowDocument.serverVersion(), is(0L));
-        assertThat(shadowDocument.clientVersion(), is(0L));
+        final ShadowDocument<String> shadowDocument = dataStore.getShadowDocument(documentId, ClientRevision.ZERO, ServerRevision.ZERO);
+        assertThat(shadowDocument.serverVersion(), equalTo(new ServerRevision(0L)));
+        assertThat(shadowDocument.clientVersion(), equalTo(new ClientRevision(0L)));
         assertThat(shadowDocument.document().content(), equalTo(originalVersion));
 
-        final BackupShadowDocument<String> backupShadowDocument = dataStore.getBackupShadowDocument(documentId, clientId);
-        assertThat(backupShadowDocument.backupVersion(), is(0L));
+        final BackupShadowDocument<String, ClientRevision> backupShadowDocument = dataStore.getBackupShadowDocument(documentId, ClientRevision.ZERO);
+        assertThat(backupShadowDocument.backupVersion(), equalTo(new ClientRevision(0L)));
         assertThat(backupShadowDocument.shadow(), equalTo(shadowDocument));
     }
-    
+
     @Test
     public void diff() {
         final String documentId = "1234";
@@ -65,7 +76,8 @@ public class ClientSyncEngineTest {
         final String shadowVersion = "{\"id\": 6666}";
         engine.addDocument(clientDoc(documentId, clientId, updatedVersion));
 
-        final PatchMessage patchMessage = engine.diff(clientDoc(documentId, clientId, shadowVersion));
+
+        final PatchMessage patchMessage = engine.diff(clientDoc(documentId, clientId, shadowVersion), ClientRevision.ZERO, ServerRevision.ZERO);
         assertThat(patchMessage.documentId(), equalTo(documentId));
         assertThat(patchMessage.clientId(), equalTo(clientId));
         assertThat(patchMessage.edits().size(), is(1));
@@ -92,17 +104,17 @@ public class ClientSyncEngineTest {
 
         final Edit edit = DefaultEdit.withDocumentId(documentId)
                 .clientId(clientId)
-                .serverVersion(0)
+                .serverVersion(ServerRevision.ONE)
                 .unchanged("Do or do not, there is no try")
                 .delete(".")
                 .add("!")
                 .build();
         engine.patch(edits(documentId, clientId, edit));
 
-        final ShadowDocument<String> shadowDocument = dataStore.getShadowDocument(documentId, clientId);
+        final ShadowDocument<String> shadowDocument = dataStore.getShadowDocument(documentId, ClientRevision.ZERO, ServerRevision.ONE);
         assertThat(shadowDocument.document().content(), equalTo("Do or do not, there is no try!"));
-        assertThat(shadowDocument.serverVersion(), is(1L));
-        assertThat(shadowDocument.clientVersion(), is(0L));
+        assertThat(shadowDocument.serverVersion(), equalTo(ServerRevision.ONE));
+        assertThat(shadowDocument.clientVersion(), equalTo(ClientRevision.ZERO));
 
         final ClientDocument<String> document = dataStore.getClientDocument(documentId, clientId);
         assertThat(document.content(), equalTo("Do or do not, there is no try!"));
@@ -134,7 +146,7 @@ public class ClientSyncEngineTest {
         assertThat(shadowDocument2.serverVersion(), is(1L));
         assertThat(shadowDocument2.clientVersion(), is(0L));
     }
-    
+
     @Test
     public void patchVersionAlreadyOnServer() {
         final String documentId = "1234";

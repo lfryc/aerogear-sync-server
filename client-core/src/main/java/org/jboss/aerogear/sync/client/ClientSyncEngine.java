@@ -73,8 +73,8 @@ public class ClientSyncEngine<T> extends Observable {
      * @param document the updated document.
      * @return {@link PatchMessage} containing the edits for the changes in the document.
      */
-    public PatchMessage diff(final ClientDocument<T> document) {
-        final ShadowDocument<T> shadow = dataStore.getShadowDocument(document.id(), document.clientId());
+    public PatchMessage diff(final ClientDocument<T> document, ClientRevision clientRevision, ServerRevision serverRevision) {
+        final ShadowDocument<T> shadow = dataStore.getShadowDocument(document.id(), clientRevision, serverRevision);
         final Edit edit = clientSynchronizer.serverDiff(document, shadow);
         dataStore.saveEdits(edit);
         final ShadowDocument<T> patchedShadow = diffPatchShadow(shadow, edit);
@@ -107,7 +107,7 @@ public class ClientSyncEngine<T> extends Observable {
     }
 
     private ShadowDocument<T> patchShadow(final PatchMessage patchMessage) {
-        ShadowDocument<T> shadow = dataStore.getShadowDocument(patchMessage.documentId(), patchMessage.clientId());
+        ShadowDocument<T> shadow = dataStore.getShadowDocument(patchMessage.documentId(), patchMessage.edits().peek().clientVersion(), patchMessage.edits().peek().serverVersion());
         final Iterator<Edit> iterator = patchMessage.edits().iterator();
         while (iterator.hasNext()) {
             final Edit edit = iterator.next();
@@ -144,7 +144,7 @@ public class ClientSyncEngine<T> extends Observable {
 
     private ShadowDocument<T> restoreBackup(final ShadowDocument<T> shadow,
                                             final Edit edit) {
-        final BackupShadowDocument<T> backup = dataStore.getBackupShadowDocument(edit.documentId(), edit.clientId());
+        final BackupShadowDocument<T, ClientRevision> backup = dataStore.getBackupShadowDocument(edit.documentId(), edit.clientVersion());
         if (clientVersionMatch(edit, backup)) {
             final ShadowDocument<T> patchedShadow = clientSynchronizer.patchShadow(edit,
                     new DefaultShadowDocument<T>(backup.backupVersion(), shadow.clientVersion(), backup.shadow().document()));

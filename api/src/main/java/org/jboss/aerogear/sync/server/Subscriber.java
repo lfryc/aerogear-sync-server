@@ -1,6 +1,8 @@
 package org.jboss.aerogear.sync.server;
 
+import org.jboss.aerogear.sync.ClientRevision;
 import org.jboss.aerogear.sync.PatchMessage;
+import org.jboss.aerogear.sync.ServerRevision;
 
 /**
  * Represents a subscriber of patches.
@@ -35,4 +37,7 @@ public interface Subscriber<T> {
      */
     void patched(PatchMessage patchMessage);
 
+    ClientRevision clientVersion();
+
+    ServerRevision serverRevision();
 }

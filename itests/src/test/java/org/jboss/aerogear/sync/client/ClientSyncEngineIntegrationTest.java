@@ -16,14 +16,25 @@
  */
 package org.jboss.aerogear.sync.client;
 
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
+import java.util.Queue;
+
 import org.jboss.aerogear.sync.BackupShadowDocument;
 import org.jboss.aerogear.sync.ClientDocument;
+import org.jboss.aerogear.sync.ClientRevision;
 import org.jboss.aerogear.sync.DefaultClientDocument;
 import org.jboss.aerogear.sync.DefaultDocument;
 import org.jboss.aerogear.sync.Diff;
 import org.jboss.aerogear.sync.Document;
 import org.jboss.aerogear.sync.Edit;
 import org.jboss.aerogear.sync.PatchMessage;
+import org.jboss.aerogear.sync.ServerRevision;
 import org.jboss.aerogear.sync.ShadowDocument;
 import org.jboss.aerogear.sync.server.DefaultServerSynchronizer;
 import org.jboss.aerogear.sync.server.ServerInMemoryDataStore;
@@ -31,15 +42,6 @@ import org.jboss.aerogear.sync.server.ServerSyncEngine;
 import org.jboss.aerogear.sync.server.Subscriber;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.List;
-import java.util.Queue;
-
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class ClientSyncEngineIntegrationTest {
 
@@ -67,13 +69,13 @@ public class ClientSyncEngineIntegrationTest {
         assertThat(clientDocument.id(), equalTo(docId));
         assertThat(clientDocument.content(), equalTo(originalVersion));
 
-        final ShadowDocument<String> shadowDocument = dataStore.getShadowDocument(docId, clientId);
-        assertThat(shadowDocument.clientVersion(), is(0L));
-        assertThat(shadowDocument.serverVersion(), is(0L));
+        final ShadowDocument<String> shadowDocument = dataStore.getShadowDocument(docId, new ClientRevision(0L), new ServerRevision(0L));
+        assertThat(shadowDocument.clientVersion(), equalTo(new ClientRevision(0L)));
+        assertThat(shadowDocument.serverVersion(), equalTo(new ServerRevision(0L)));
         assertThat(shadowDocument.document(), equalTo(clientDocument));
 
-        final BackupShadowDocument<String> backupShadowDocument = dataStore.getBackupShadowDocument(docId, clientId);
-        assertThat(backupShadowDocument.backupVersion(), is(0L));
+        final BackupShadowDocument<String, ClientRevision> backupShadowDocument = dataStore.getBackupShadowDocument(docId, new ClientRevision(0L));
+        assertThat(backupShadowDocument.backupVersion(), equalTo(new ClientRevision(0L)));
         assertThat(backupShadowDocument.shadow(), equalTo(shadowDocument));
     }
 
@@ -92,8 +94,8 @@ public class ClientSyncEngineIntegrationTest {
         assertThat(patchMessage.edits().size(), is(1));
         final Edit edit = patchMessage.edits().iterator().next();
         // client version is only incremented after the diff is taken. See shadowDocument asserts below.
-        assertThat(edit.clientVersion(), is(0L));
-        assertThat(edit.serverVersion(), is(0L));
+        assertThat(edit.clientVersion(), equalTo(new ClientRevision(0L)));
+        assertThat(edit.serverVersion(), equalTo(new ServerRevision(0L)));
 
         final List<Diff> diffs = edit.diffs();
         assertThat(edit.diffs().size(), is(3));
@@ -104,11 +106,12 @@ public class ClientSyncEngineIntegrationTest {
         assertThat(diffs.get(2).operation(), is(Diff.Operation.ADD));
         assertThat(diffs.get(2).text(), equalTo("!"));
 
-        final ClientDocument<String> document = dataStore.getShadowDocument(edit.documentId(), edit.clientId()).document();
+        final ShadowDocument<String> shadowDocument = dataStore.getShadowDocument(edit.documentId(), edit.clientVersion(), edit.serverVersion());
 
-        final ShadowDocument<String> shadowDocument = dataStore.getShadowDocument(edit.documentId(), edit.clientId());
-        assertThat(shadowDocument.clientVersion(), is(1L));
-        assertThat(shadowDocument.serverVersion(), is(0L));
+        final ClientDocument<String> document = shadowDocument.document();
+
+        assertThat(shadowDocument.clientVersion(), equalTo(new ClientRevision(1L)));
+        assertThat(shadowDocument.serverVersion(), equalTo(new ServerRevision(0L)));
         assertThat(shadowDocument.document(), equalTo(document));
     }
 
@@ -132,8 +135,8 @@ public class ClientSyncEngineIntegrationTest {
         assertThat(patchMessage.clientId(), equalTo(subscriberOne.clientId()));
         assertThat(patchMessage.edits().size(), is(1));
         final Edit edit = patchMessage.edits().peek();
-        assertThat(edit.clientVersion(), is(0L));
-        assertThat(edit.serverVersion(), is(0L));
+        assertThat(edit.clientVersion(), equalTo(new ClientRevision(0L)));
+        assertThat(edit.serverVersion(), equalTo(new ServerRevision(0L)));
         final List<Diff> diffs = edit.diffs();
         assertThat(diffs.size(), is(3));
         assertThat(diffs.get(0).operation(), is(Diff.Operation.UNCHANGED));
@@ -150,8 +153,8 @@ public class ClientSyncEngineIntegrationTest {
         assertThat(serverPatchMessage.documentId(), equalTo(docId));
         assertThat(serverPatchMessage.edits().size(), is(1));
         final Edit serverEdit = serverPatchMessage.edits().peek();
-        assertThat(serverEdit.clientVersion(), is(0L));
-        assertThat(serverEdit.serverVersion(), is(0L));
+        assertThat(serverEdit.clientVersion(), equalTo(new ClientRevision(0L)));
+        assertThat(serverEdit.serverVersion(), equalTo(new ServerRevision(0L)));
         assertThat(serverEdit.diffs().size(), is(3));
         final List<Diff> serverDiffs = edit.diffs();
         assertThat(serverDiffs.size(), is(3));
@@ -177,13 +180,13 @@ public class ClientSyncEngineIntegrationTest {
         assertThat(serverEdit2.diffs().get(0).operation(), is(Diff.Operation.UNCHANGED));
         assertThat(serverEdit2.diffs().get(0).text(), equalTo("Do or do not, there is no try!"));
 
-        final ShadowDocument<String> shadowDocument = dataStore.getShadowDocument(docId, subscriberTwo.clientId());
-        assertThat(shadowDocument.clientVersion(), is(0L));
-        assertThat(shadowDocument.serverVersion(), is(1L));
+        final ShadowDocument<String> shadowDocument = dataStore.getShadowDocument(docId, serverEdit2.clientVersion(), serverEdit2.serverVersion());
+        assertThat(shadowDocument.clientVersion(), equalTo(new ClientRevision(0L)));
+        assertThat(shadowDocument.serverVersion(), equalTo(new ServerRevision(1L)));
         assertThat(shadowDocument.document().content(), equalTo(secondVersion));
 
-        final BackupShadowDocument<String> backupShadowDocument = dataStore.getBackupShadowDocument(docId, subscriberTwo.clientId());
-        assertThat(backupShadowDocument.backupVersion(), is(0L));
+        final BackupShadowDocument<String, ClientRevision> backupShadowDocument = dataStore.getBackupShadowDocument(docId, serverEdit2.clientVersion());
+        assertThat(backupShadowDocument.backupVersion(), equalTo(new ClientRevision(0L)));
         assertThat(backupShadowDocument.shadow().document().content(), equalTo(secondVersion));
     }
 
