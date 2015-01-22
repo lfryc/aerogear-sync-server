@@ -16,14 +16,25 @@
  */
 package org.jboss.aerogear.sync.client;
 
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import org.jboss.aerogear.sync.*;
+import java.util.List;
+
+import org.jboss.aerogear.sync.ClientDocument;
+import org.jboss.aerogear.sync.ClientRevision;
+import org.jboss.aerogear.sync.DefaultClientDocument;
+import org.jboss.aerogear.sync.DefaultDocument;
+import org.jboss.aerogear.sync.DefaultEdit;
+import org.jboss.aerogear.sync.DefaultShadowDocument;
+import org.jboss.aerogear.sync.Diff;
+import org.jboss.aerogear.sync.Document;
+import org.jboss.aerogear.sync.Edit;
+import org.jboss.aerogear.sync.ServerRevision;
+import org.jboss.aerogear.sync.ShadowDocument;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.List;
-import static org.hamcrest.CoreMatchers.*;
 
 public class DefaultClientSynchronizerTest {
 
@@ -43,8 +54,8 @@ public class DefaultClientSynchronizerTest {
         final ShadowDocument<String> clientShadow = shadowDocument(documentId, clientId, original);
 
         final Edit edit = clientSynchronizer.clientDiff(newDoc(documentId, update), clientShadow);
-        assertThat(edit.clientVersion(), is(0L));
-        assertThat(edit.serverVersion(), is(0L));
+        assertThat(edit.clientVersion().version(), is(0L));
+        assertThat(edit.serverVersion().version(), is(0L));
         assertThat(edit.clientId(), is(clientId));
         assertThat(edit.diffs().size(), is(3));
         final List<Diff> diffs = edit.diffs();
@@ -96,7 +107,7 @@ public class DefaultClientSynchronizerTest {
                                                          final String clientId,
                                                          final String content) {
         final ClientDocument<String> clientDoc = new DefaultClientDocument<String>(documentId, clientId, content);
-        return new DefaultShadowDocument<String>(0, 0, clientDoc);
+        return new DefaultShadowDocument<String>(ServerRevision.ZERO, ClientRevision.ZERO, clientDoc);
     }
 
     private static Document<String> newDoc(final String documentId, final String content) {

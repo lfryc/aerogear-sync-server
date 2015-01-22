@@ -73,7 +73,7 @@ public class ClientSyncEngine<T> extends Observable {
      * @param document the updated document.
      * @return {@link PatchMessage} containing the edits for the changes in the document.
      */
-    public PatchMessage diff(final ClientDocument<T> document, ClientRevision clientRevision, ServerRevision serverRevision) {
+    public PatchMessage diff(final ClientDocument<T> document) {
         final ShadowDocument<T> shadow = dataStore.getShadowDocument(document.id(), document.clientId());
         final Edit edit = clientSynchronizer.serverDiff(document, shadow);
         dataStore.saveEdits(edit);
@@ -147,7 +147,7 @@ public class ClientSyncEngine<T> extends Observable {
         final BackupShadowDocument<T, ClientRevision> backup = dataStore.getBackupShadowDocument(edit.documentId(), edit.clientVersion());
         if (clientVersionMatch(edit, backup)) {
             final ShadowDocument<T> patchedShadow = clientSynchronizer.patchShadow(edit,
-                    new DefaultShadowDocument<T>(backup.backupVersion(), shadow.clientVersion(), backup.shadow().document()));
+                    new DefaultShadowDocument<T>(backup.shadow().serverVersion(), shadow.clientVersion(), backup.shadow().document()));
             dataStore.removeEdits(edit.documentId(), edit.clientId());
             ShadowDocument<T> newShadow = incrementServerVersion(patchedShadow);
             dataStore.removeEdit(edit);

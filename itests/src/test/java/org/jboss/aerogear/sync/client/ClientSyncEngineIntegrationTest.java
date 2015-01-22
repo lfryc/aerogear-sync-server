@@ -69,7 +69,7 @@ public class ClientSyncEngineIntegrationTest {
         assertThat(clientDocument.id(), equalTo(docId));
         assertThat(clientDocument.content(), equalTo(originalVersion));
 
-        final ShadowDocument<String> shadowDocument = dataStore.getShadowDocument(docId, new ClientRevision(0L), new ServerRevision(0L));
+        final ShadowDocument<String> shadowDocument = dataStore.getShadowDocument(docId, clientId);
         assertThat(shadowDocument.clientVersion(), equalTo(new ClientRevision(0L)));
         assertThat(shadowDocument.serverVersion(), equalTo(new ServerRevision(0L)));
         assertThat(shadowDocument.document(), equalTo(clientDocument));
@@ -106,7 +106,7 @@ public class ClientSyncEngineIntegrationTest {
         assertThat(diffs.get(2).operation(), is(Diff.Operation.ADD));
         assertThat(diffs.get(2).text(), equalTo("!"));
 
-        final ShadowDocument<String> shadowDocument = dataStore.getShadowDocument(edit.documentId(), edit.clientVersion(), edit.serverVersion());
+        final ShadowDocument<String> shadowDocument = dataStore.getShadowDocument(edit.documentId(), clientOne);
 
         final ClientDocument<String> document = shadowDocument.document();
 
@@ -180,7 +180,7 @@ public class ClientSyncEngineIntegrationTest {
         assertThat(serverEdit2.diffs().get(0).operation(), is(Diff.Operation.UNCHANGED));
         assertThat(serverEdit2.diffs().get(0).text(), equalTo("Do or do not, there is no try!"));
 
-        final ShadowDocument<String> shadowDocument = dataStore.getShadowDocument(docId, serverEdit2.clientVersion(), serverEdit2.serverVersion());
+        final ShadowDocument<String> shadowDocument = dataStore.getShadowDocument(docId, subscriberTwo.clientId());
         assertThat(shadowDocument.clientVersion(), equalTo(new ClientRevision(0L)));
         assertThat(shadowDocument.serverVersion(), equalTo(new ServerRevision(1L)));
         assertThat(shadowDocument.document().content(), equalTo(secondVersion));

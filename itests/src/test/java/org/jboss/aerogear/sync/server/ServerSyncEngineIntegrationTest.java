@@ -16,30 +16,30 @@
  */
 package org.jboss.aerogear.sync.server;
 
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+
+import java.util.LinkedList;
+import java.util.UUID;
+
 import org.jboss.aerogear.sync.ClientDocument;
 import org.jboss.aerogear.sync.DefaultClientDocument;
 import org.jboss.aerogear.sync.DefaultDocument;
 import org.jboss.aerogear.sync.Diff;
+import org.jboss.aerogear.sync.Diff.Operation;
 import org.jboss.aerogear.sync.Document;
 import org.jboss.aerogear.sync.Edit;
 import org.jboss.aerogear.sync.PatchMessage;
 import org.jboss.aerogear.sync.ShadowDocument;
-import org.jboss.aerogear.sync.Diff.Operation;
 import org.jboss.aerogear.sync.client.ClientDataStore;
 import org.jboss.aerogear.sync.client.ClientInMemoryDataStore;
 import org.jboss.aerogear.sync.client.ClientSyncEngine;
 import org.jboss.aerogear.sync.client.DefaultClientSynchronizer;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.LinkedList;
-import java.util.UUID;
-
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 public class ServerSyncEngineIntegrationTest {
 
@@ -80,8 +80,8 @@ public class ServerSyncEngineIntegrationTest {
         serverSyncEngine.addSubscriber(new MockSubscriber(clientId), newDoc(documentId, "What!"));
         final ShadowDocument<String> shadowDocument = dataStore.getShadowDocument(documentId, clientId);
         assertThat(shadowDocument.document().clientId(), is("shadowTest"));
-        assertThat(shadowDocument.serverVersion(), is(0L));
-        assertThat(shadowDocument.clientVersion(), is(0L));
+        assertThat(shadowDocument.serverVersion().version(), is(0L));
+        assertThat(shadowDocument.clientVersion().version(), is(0L));
         assertThat(shadowDocument.document().id(), equalTo(documentId));
     }
 
@@ -99,8 +99,8 @@ public class ServerSyncEngineIntegrationTest {
         serverSyncEngine.patch(clientSideEdits(documentId, originalVersion, clientOne, versionOne));
 
         final Edit edit = serverSyncEngine.diff(documentId, clientTwo);
-        assertThat(edit.clientVersion(), is(0L));
-        assertThat(edit.serverVersion(), is(0L));
+        assertThat(edit.clientVersion().version(), is(0L));
+        assertThat(edit.serverVersion().version(), is(0L));
         assertThat(edit.clientId(), equalTo(clientTwo));
         final LinkedList<Diff> diffs = edit.diffs();
         assertThat(diffs.size(), is(3));
@@ -111,8 +111,8 @@ public class ServerSyncEngineIntegrationTest {
         assertThat(diffs.get(2).text(), equalTo("!"));
 
         final ShadowDocument<String> shadowAfter = dataStore.getShadowDocument(documentId, clientOne);
-        assertThat(shadowAfter.clientVersion(), is(1L));
-        assertThat(shadowAfter.serverVersion(), is(0L));
+        assertThat(shadowAfter.clientVersion().version(), is(1L));
+        assertThat(shadowAfter.serverVersion().version(), is(0L));
     }
 
     @Test
@@ -142,8 +142,8 @@ public class ServerSyncEngineIntegrationTest {
         assertThat(clientOneServerPatchMessage.documentId(), equalTo(documentId));
         assertThat(clientOneServerPatchMessage.edits().size(), is(1));
         final Edit clientOneServerEdit = clientOneServerPatchMessage.edits().peek();
-        assertThat(clientOneServerEdit.clientVersion(), is(1L));
-        assertThat(clientOneServerEdit.serverVersion(), is(0L));
+        assertThat(clientOneServerEdit.clientVersion().version(), is(1L));
+        assertThat(clientOneServerEdit.serverVersion().version(), is(0L));
         assertThat(clientOneServerEdit.diffs().size(), is(1));
         assertThat(clientOneServerEdit.diffs().get(0).operation(), is(Operation.UNCHANGED));
         assertThat(clientOneServerEdit.diffs().get(0).text(), equalTo(versionTwo));
@@ -155,8 +155,8 @@ public class ServerSyncEngineIntegrationTest {
         assertThat(clientTwoServerPatchMessage.documentId(), equalTo(documentId));
         assertThat(clientTwoServerPatchMessage.edits().size(), is(1));
         final Edit clientTwoServerEdit = clientTwoServerPatchMessage.edits().peek();
-        assertThat(clientTwoServerEdit.clientVersion(), is(0L));
-        assertThat(clientTwoServerEdit.serverVersion(), is(0L));
+        assertThat(clientTwoServerEdit.clientVersion().version(), is(0L));
+        assertThat(clientTwoServerEdit.serverVersion().version(), is(0L));
         final LinkedList<Diff> clientTwoServerDiffs = clientTwoServerEdit.diffs();
         assertThat(clientTwoServerDiffs.size(), is(3));
         assertThat(clientTwoServerDiffs.get(0).operation(), is(Operation.UNCHANGED));
@@ -169,8 +169,8 @@ public class ServerSyncEngineIntegrationTest {
 
         serverSyncEngine.patch(clientOneSyncEngine.diff(newClientDoc(documentId, versionThree, clientOne)));
         final Edit thirdEdit = serverSyncEngine.diff(documentId, clientTwo);
-        assertThat(thirdEdit.clientVersion(), is(0L));
-        assertThat(thirdEdit.serverVersion(), is(1L));
+        assertThat(thirdEdit.clientVersion().version(), is(0L));
+        assertThat(thirdEdit.serverVersion().version(), is(1L));
         final LinkedList<Diff> thirdDiffs = thirdEdit.diffs();
         assertThat(thirdDiffs.size(), is(3));
         assertThat(thirdDiffs.get(0).operation(), is(Operation.UNCHANGED));
