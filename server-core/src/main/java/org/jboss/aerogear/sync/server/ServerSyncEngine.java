@@ -45,8 +45,8 @@ import org.slf4j.LoggerFactory;
 public class ServerSyncEngine<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(ServerSyncEngine.class);
-    private static final ClientRevision SEEDED_CLIENT_VERSION = new ClientRevision(-1);
-    private static final ServerRevision SEEDED_SERVER_VERSION = new ServerRevision(1);
+    private static final ClientRevision SEEDED_CLIENT_VERSION = ClientRevision.SEEDED_VERSION;
+    private static final ServerRevision SEEDED_SERVER_VERSION = ServerRevision.SEEDED_VERSION;
     private static final LinkedList<Edit> EMPTY_EDITS = new LinkedList<Edit>();
     private static final ConcurrentHashMap<String, Set<Subscriber<?>>> subscribers =
             new ConcurrentHashMap<String, Set<Subscriber<?>>>();
@@ -226,7 +226,7 @@ public class ServerSyncEngine<T> {
     private ShadowDocument<T> addShadow(final String documentId, final String clientId, final long clientVersion) {
         final Document<T> document = dataStore.getDocument(documentId);
         final ClientDocument<T> clientDocument = new DefaultClientDocument<T>(documentId, clientId, document.content());
-        final ShadowDocument<T> shadowDocument = new DefaultShadowDocument<T>(0, clientVersion, clientDocument);
+        final ShadowDocument<T> shadowDocument = new DefaultShadowDocument<T>(new ServerRevision(0L), new ClientRevision(clientVersion), clientDocument);
         dataStore.saveShadowDocument(shadowDocument);
         dataStore.saveBackupShadowDocument(newBackupShadow(shadowDocument));
         return shadowDocument;
@@ -271,11 +271,11 @@ public class ServerSyncEngine<T> {
     }
 
     private boolean droppedServerPacket(final Edit edit, final ShadowDocument<T> shadowDocument) {
-        return edit.serverVersion() < shadowDocument.serverVersion();
+        return edit.serverVersion().compareTo(shadowDocument.serverVersion()) < 0;
     }
 
     private boolean hasClientUpdate(final Edit edit, final ShadowDocument<T> shadowDocument) {
-        return edit.clientVersion() < shadowDocument.clientVersion();
+        return edit.clientVersion().compareTo(shadowDocument.clientVersion()) < 0;
     }
 
     private boolean allVersionMatch(final Edit edit, final ShadowDocument<T> shadowDocument) {
@@ -285,7 +285,7 @@ public class ServerSyncEngine<T> {
 
     private ShadowDocument<T> restoreBackup(final ShadowDocument<T> shadow,
                                             final Edit edit) {
-        final BackupShadowDocument<T, ServerRevision> backup = dataStore.getBackupShadowDocument(edit.documentId(), edit.clientId());
+        final BackupShadowDocument<T, ServerRevision> backup = dataStore.getBackupShadowDocument(edit.documentId(), edit.serverVersion());
         if (serverVersionMatch(backup, edit)) {
             final ShadowDocument<T> patchedShadow = synchronizer.patchShadow(edit,
                     new DefaultShadowDocument<T>(backup.backupVersion(), shadow.clientVersion(), backup.shadow().document()));
@@ -298,7 +298,7 @@ public class ServerSyncEngine<T> {
         }
     }
 
-    private boolean serverVersionMatch(final BackupShadowDocument<T> backup, final Edit edit) {
+    private boolean serverVersionMatch(final BackupShadowDocument<T, ServerRevision> backup, final Edit edit) {
         return backup.backupVersion() == edit.serverVersion();
     }
 
@@ -312,13 +312,11 @@ public class ServerSyncEngine<T> {
     }
 
     private ShadowDocument<T> incrementClientVersion(final ShadowDocument<T> shadow) {
-        final long clientVersion = shadow.clientVersion() + 1;
-        return new DefaultShadowDocument<T>(shadow.serverVersion(), clientVersion, shadow.document());
+        return new DefaultShadowDocument<T>(shadow.serverVersion().increment(), shadow.clientVersion().increment(), shadow.document());
     }
 
     private ShadowDocument<T> incrementServerVersion(final ShadowDocument<T> shadow) {
-        final long serverVersion = shadow.serverVersion() + 1;
-        return new DefaultShadowDocument<T>(serverVersion, shadow.clientVersion(), shadow.document());
+        return new DefaultShadowDocument<T>(shadow.serverVersion().increment(), shadow.clientVersion(), shadow.document());
     }
 
     private DefaultBackupShadowDocument<T, ServerRevision> newBackupShadow(final ShadowDocument<T> shadow) {

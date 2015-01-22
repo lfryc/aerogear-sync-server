@@ -16,6 +16,11 @@
  */
 package org.jboss.aerogear.sync.server;
 
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
+import org.jboss.aerogear.sync.ClientRevision;
 import org.jboss.aerogear.sync.DefaultClientDocument;
 import org.jboss.aerogear.sync.DefaultDocument;
 import org.jboss.aerogear.sync.DefaultEdit;
@@ -23,12 +28,9 @@ import org.jboss.aerogear.sync.DefaultShadowDocument;
 import org.jboss.aerogear.sync.Diff.Operation;
 import org.jboss.aerogear.sync.Document;
 import org.jboss.aerogear.sync.Edit;
+import org.jboss.aerogear.sync.ServerRevision;
 import org.jboss.aerogear.sync.ShadowDocument;
 import org.junit.Test;
-
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 public class DefaultServerSynchronizerTest {
 
@@ -40,8 +42,8 @@ public class DefaultServerSynchronizerTest {
 
         final Edit edit = synchronizer.clientDiff(document, shadowDocument);
         assertThat(edit.clientId(), equalTo("client1"));
-        assertThat(edit.clientVersion(), is(0L));
-        assertThat(edit.serverVersion(), is(0L));
+        assertThat(edit.clientVersion().version(), is(0L));
+        assertThat(edit.serverVersion().version(), is(0L));
         assertThat(edit.diffs().size(), is(2));
         assertThat(edit.diffs().get(0).operation(), is(Operation.UNCHANGED));
         assertThat(edit.diffs().get(0).text(), is("test"));
@@ -57,8 +59,8 @@ public class DefaultServerSynchronizerTest {
 
         final Edit edit = synchronizer.serverDiff(document, shadowDocument);
         assertThat(edit.clientId(), equalTo("client1"));
-        assertThat(edit.clientVersion(), is(0L));
-        assertThat(edit.serverVersion(), is(0L));
+        assertThat(edit.clientVersion().version(), is(0L));
+        assertThat(edit.serverVersion().version(), is(0L));
         assertThat(edit.diffs().size(), is(2));
         assertThat(edit.diffs().get(0).operation(), is(Operation.UNCHANGED));
         assertThat(edit.diffs().get(0).text(), is("test"));
@@ -119,8 +121,8 @@ public class DefaultServerSynchronizerTest {
     private static ShadowDocument<String> shadowDocument(final String documentId,
                                                          final String clientVersion,
                                                          final String content) {
-        return new DefaultShadowDocument<String>(0L,
-                0L,
+        return new DefaultShadowDocument<String>(new ServerRevision(0L),
+                new ClientRevision(0L),
                 new DefaultClientDocument<String>(documentId, clientVersion, content));
 
     }

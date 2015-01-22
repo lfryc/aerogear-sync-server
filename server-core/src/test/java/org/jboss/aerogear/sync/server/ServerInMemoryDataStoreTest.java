@@ -1,14 +1,14 @@
 package org.jboss.aerogear.sync.server;
 
-import org.jboss.aerogear.sync.DefaultEdit;
-import org.jboss.aerogear.sync.Edit;
-import org.junit.Test;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.Iterator;
 import java.util.Queue;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
+import org.jboss.aerogear.sync.DefaultEdit;
+import org.jboss.aerogear.sync.Edit;
+import org.junit.Test;
 
 public class ServerInMemoryDataStoreTest {
 
@@ -24,7 +24,7 @@ public class ServerInMemoryDataStoreTest {
         final Queue<Edit> edits = dataStore.getEdits(documentId, clientId);
         assertThat(edits.size(), is(2));
         final Iterator<Edit> iterator = edits.iterator();
-        assertThat(iterator.next().clientVersion(), is(0L));
-        assertThat(iterator.next().clientVersion(), is(1L));
+        assertThat(iterator.next().clientVersion().version(), is(0L));
+        assertThat(iterator.next().clientVersion().version(), is(1L));
     }
 }

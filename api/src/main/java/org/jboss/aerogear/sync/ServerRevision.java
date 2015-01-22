@@ -1,9 +1,11 @@
 package org.jboss.aerogear.sync;
 
-public class ServerRevision implements Revision {
+public class ServerRevision implements Revision<ServerRevision>, Comparable<ServerRevision> {
 
     public static final ServerRevision ZERO = new ServerRevision(0L);
     public static final ServerRevision ONE = new ServerRevision(1L);
+
+    public static final ServerRevision SEEDED_VERSION = ONE;
 
     private long version;
 
@@ -14,6 +16,16 @@ public class ServerRevision implements Revision {
     @Override
     public long version() {
         return version;
+    }
+
+    @Override
+    public ServerRevision increment() {
+        return new ServerRevision(version + 1);
+    }
+
+    @Override
+    public int compareTo(ServerRevision o) {
+        return Long.compare(version, o.version);
     }
 
     @Override

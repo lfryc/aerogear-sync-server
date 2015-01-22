@@ -34,19 +34,18 @@ public class ServerInMemoryDataStore implements ServerDataStore<String> {
 
     private static final Queue<Edit> EMPTY_QUEUE = new LinkedList<Edit>();
     private final ConcurrentMap<String, Document<String>> documents = new ConcurrentHashMap<String, Document<String>>();
-    private final ConcurrentMap<ShadowId, ShadowDocument<String>> shadows = new ConcurrentHashMap<ShadowId, ShadowDocument<String>>();
+    private final ConcurrentMap<Id, ShadowDocument<String>> shadows = new ConcurrentHashMap<Id, ShadowDocument<String>>();
     private final ConcurrentMap<BackupId, BackupShadowDocument<String, ServerRevision>> backups = new ConcurrentHashMap<BackupId, BackupShadowDocument<String, ServerRevision>>();
     private final ConcurrentHashMap<Id, Queue<Edit>> pendingEdits = new ConcurrentHashMap<Id, Queue<Edit>>();
 
     @Override
     public void saveShadowDocument(final ShadowDocument<String> shadowDocument) {
-        shadows.put(id(shadowDocument.document().id(), shadowDocument.clientVersion(), shadowDocument.serverVersion()), shadowDocument);
+        shadows.put(id(shadowDocument.document().id(), shadowDocument.document().clientId()), shadowDocument);
     }
 
     @Override
-    public ShadowDocument<String> getShadowDocument(final String documentId, ClientRevision clientRevision,
-            ServerRevision serverRevision) {
-        return shadows.get(id(documentId, clientRevision, serverRevision));
+    public ShadowDocument<String> getShadowDocument(final String documentId, final String clientId) {
+        return shadows.get(id(documentId, clientId));
     }
 
     @Override
@@ -139,10 +138,6 @@ public class ServerInMemoryDataStore implements ServerDataStore<String> {
 
     private static Id id(final String documentId, final String clientId) {
         return new Id(documentId, clientId);
-    }
-
-    private static ShadowId id(final String documentId, ClientRevision clientRevision, ServerRevision serverRevision) {
-        return new ShadowId(documentId, clientRevision, serverRevision);
     }
 
     private static BackupId id(final String documentId, ServerRevision serverRevision) {

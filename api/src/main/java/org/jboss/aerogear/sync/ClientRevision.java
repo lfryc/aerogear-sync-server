@@ -1,9 +1,14 @@
 package org.jboss.aerogear.sync;
 
-public class ClientRevision implements Revision, Comparable<ClientRevision> {
+public class ClientRevision implements Revision<ClientRevision>, Comparable<ClientRevision> {
 
     public static final ClientRevision ZERO = new ClientRevision(0L);
     public static final ClientRevision ONE = new ClientRevision(1L);
+
+    /**
+     * TODO: needs comment from Dan Bevenius what exactly SEEDED version (originally from ServerSyncEngine) is good for
+     */
+    public static final ClientRevision SEEDED_VERSION = new ClientRevision(-1);
 
     private long version;
 
@@ -14,6 +19,11 @@ public class ClientRevision implements Revision, Comparable<ClientRevision> {
     @Override
     public long version() {
         return version;
+    }
+
+    @Override
+    public ClientRevision increment() {
+        return new ClientRevision(version + 1);
     }
 
     @Override

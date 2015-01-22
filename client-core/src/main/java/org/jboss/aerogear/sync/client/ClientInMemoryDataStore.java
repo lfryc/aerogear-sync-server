@@ -34,18 +34,18 @@ public class ClientInMemoryDataStore implements ClientDataStore<String> {
 
     private static final Queue<Edit> EMPTY_QUEUE = new LinkedList<Edit>();
     private final ConcurrentMap<Id, ClientDocument<String>> documents = new ConcurrentHashMap<Id, ClientDocument<String>>();
-    private final ConcurrentMap<ShadowId, ShadowDocument<String>> shadows = new ConcurrentHashMap<ShadowId, ShadowDocument<String>>();
+    private final ConcurrentMap<Id, ShadowDocument<String>> shadows = new ConcurrentHashMap<Id, ShadowDocument<String>>();
     private final ConcurrentMap<BackupId, BackupShadowDocument<String, ClientRevision>> backups = new ConcurrentHashMap<BackupId, BackupShadowDocument<String, ClientRevision>>();
     private final ConcurrentHashMap<Id, Queue<Edit>> pendingEdits = new ConcurrentHashMap<Id, Queue<Edit>>();
 
     @Override
     public void saveShadowDocument(final ShadowDocument<String> shadowDocument) {
-        shadows.put(id(shadowDocument.document().id(), shadowDocument.clientVersion(), shadowDocument.serverVersion()), shadowDocument);
+        shadows.put(id(shadowDocument.document().id(), shadowDocument.document().clientId()), shadowDocument);
     }
 
     @Override
-    public ShadowDocument<String> getShadowDocument(final String documentId, ClientRevision clientRevision, ServerRevision serverRevision) {
-        return shadows.get(id(documentId, clientRevision, serverRevision));
+    public ShadowDocument<String> getShadowDocument(final String documentId, final String clientId) {
+        return shadows.get(id(documentId, clientId));
     }
 
     @Override

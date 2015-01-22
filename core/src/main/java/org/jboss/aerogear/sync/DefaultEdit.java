@@ -143,6 +143,14 @@ public class DefaultEdit implements Edit {
             return this;
         }
 
+        public Builder serverVersion(final int serverVersion) {
+            return serverVersion(new ServerRevision(serverVersion));
+        }
+
+        public Builder clientVersion(final int clientVersion) {
+            return clientVersion(new ClientRevision(clientVersion));
+        }
+
         public Builder serverVersion(final ServerRevision serverVersion) {
             this.serverVersion = serverVersion;
             return this;

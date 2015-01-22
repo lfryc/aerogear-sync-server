@@ -22,7 +22,7 @@ public class DefaultShadowDocument<T> implements ShadowDocument<T> {
     private final ClientRevision clientVersion;
     private final ClientDocument<T> document;
 
-    public DefaultShadowDocument(final ClientRevision clientVersion, final ServerRevision serverVersion, final ClientDocument<T> document) {
+    public DefaultShadowDocument(final ServerRevision serverVersion, final ClientRevision clientVersion, final ClientDocument<T> document) {
         this.serverVersion = serverVersion;
         this.clientVersion = clientVersion;
         this.document = document;

@@ -24,7 +24,7 @@ public interface DataStore<T, BackupRevision extends Revision> {
      * @param clientId the client for which to retrieve the shadow document.
      * @return {@link ShadowDocument} the shadow document matching the documentId.
      */
-    ShadowDocument<T> getShadowDocument(String documentId, ClientRevision clientRevision, ServerRevision serverRevision);
+    ShadowDocument<T> getShadowDocument(String documentId, String clientId);
 
     /**
      * Saves a backup shadow document
