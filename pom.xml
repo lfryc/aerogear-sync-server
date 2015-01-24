@@ -45,9 +45,9 @@
         <module>server-core</module>
         <module>client-core</module>
         <module>client-netty</module>
-        <module>client-xmpp</module>
-        <module>server-netty</module>
-        <module>server-xmpp</module>
+<!--         <module>client-xmpp</module> -->
+<!--         <module>server-netty</module> -->
+<!--         <module>server-xmpp</module> -->
         <module>itests</module>
     </modules>
 
