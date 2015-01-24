@@ -104,7 +104,8 @@ public class ClientSyncEngineTest {
 
         final Edit edit = DefaultEdit.withDocumentId(documentId)
                 .clientId(clientId)
-                .serverVersion(ServerRevision.ONE)
+                .serverVersion(ServerRevision.ZERO)
+                .clientVersion(ClientRevision.ZERO)
                 .unchanged("Do or do not, there is no try")
                 .delete(".")
                 .add("!")
@@ -130,6 +131,7 @@ public class ClientSyncEngineTest {
         final Edit edit = DefaultEdit.withDocumentId(documentId)
                 .clientId(clientId)
                 .serverVersion(0)
+                .clientVersion(0)
                 .unchanged("Do or do not, there is no try")
                 .delete(".")
                 .add("!")
@@ -185,6 +187,7 @@ public class ClientSyncEngineTest {
 
         final Edit edit1 = DefaultEdit.withDocumentId(documentId)
                 .clientId(clientId)
+                .clientVersion(0)
                 .serverVersion(0)
                 .unchanged("Do or do not, there is no try")
                 .delete(".")
@@ -192,6 +195,7 @@ public class ClientSyncEngineTest {
                 .build();
         final Edit edit2 = DefaultEdit.withDocumentId(documentId)
                 .clientId(clientId)
+                .clientVersion(0)
                 .serverVersion(1)
                 .unchanged("Do or do not")
                 .add("hing")
@@ -219,6 +223,7 @@ public class ClientSyncEngineTest {
 
         final Edit edit1 = DefaultEdit.withDocumentId(documentId)
                 .clientId(clientId)
+                .clientVersion(0)
                 .serverVersion(0)
                 .unchanged("Do or do not, there is no try")
                 .delete(".")

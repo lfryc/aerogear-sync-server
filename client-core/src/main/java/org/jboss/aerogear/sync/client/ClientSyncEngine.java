@@ -139,7 +139,7 @@ public class ClientSyncEngine<T> extends Observable {
     }
 
     private static boolean isSeedVersion(final Edit edit) {
-        return edit.clientVersion().equals(ClientRevision.SEEDED_VERSION);
+        return ClientRevision.SEEDED_VERSION.equals(edit.clientVersion());
     }
 
     private ShadowDocument<T> restoreBackup(final ShadowDocument<T> shadow,
@@ -147,7 +147,7 @@ public class ClientSyncEngine<T> extends Observable {
         final BackupShadowDocument<T, ClientRevision> backup = dataStore.getBackupShadowDocument(edit.documentId(), edit.clientVersion());
         if (clientVersionMatch(edit, backup)) {
             final ShadowDocument<T> patchedShadow = clientSynchronizer.patchShadow(edit,
-                    new DefaultShadowDocument<T>(backup.shadow().serverVersion(), shadow.clientVersion(), backup.shadow().document()));
+                    new DefaultShadowDocument<T>(new ServerRevision(backup.shadow().clientVersion().version()), shadow.clientVersion(), backup.shadow().document()));
             dataStore.removeEdits(edit.documentId(), edit.clientId());
             ShadowDocument<T> newShadow = incrementServerVersion(patchedShadow);
             dataStore.removeEdit(edit);
@@ -159,11 +159,11 @@ public class ClientSyncEngine<T> extends Observable {
     }
 
     private boolean clientVersionMatch(final Edit edit, final BackupShadowDocument<T, ClientRevision> backup) {
-        return edit.clientVersion() == backup.backupVersion();
+        return edit.clientVersion().equals(backup.backupVersion());
     }
 
     private boolean allVersionsMatch(final Edit edit, final ShadowDocument<T> shadow) {
-        return edit.serverVersion() == shadow.serverVersion() && edit.clientVersion() == shadow.clientVersion();
+        return edit.serverVersion().equals(shadow.serverVersion()) && edit.clientVersion().equals(shadow.clientVersion());
     }
 
     private boolean clientPacketDropped(final Edit edit, final ShadowDocument<T> shadow) {

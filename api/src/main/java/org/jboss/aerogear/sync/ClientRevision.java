@@ -6,9 +6,14 @@ public class ClientRevision implements Revision<ClientRevision>, Comparable<Clie
     public static final ClientRevision ONE = new ClientRevision(1L);
 
     /**
-     * TODO: needs comment from Dan Bevenius what exactly SEEDED version (originally from ServerSyncEngine) is good for
+     * TODO(lfryc): needs comment from Dan Bevenius what exactly SEEDED version (originally from ServerSyncEngine) is good for
      */
     public static final ClientRevision SEEDED_VERSION = new ClientRevision(-1);
+
+    /**
+     * TODO(lfryc): this should be reinspected, in original DefaultEdit, the default was undefined
+     */
+    public static final ClientRevision DEFAULT_VERSION = new ClientRevision(0L);
 
     private long version;
 
@@ -51,5 +56,10 @@ public class ClientRevision implements Revision<ClientRevision>, Comparable<Clie
         if (version != other.version)
             return false;
         return true;
+    }
+
+    @Override
+    public String toString() {
+        return "ClientRevision [" + version + "]";
     }
 }

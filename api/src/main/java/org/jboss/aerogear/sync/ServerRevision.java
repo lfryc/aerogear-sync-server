@@ -7,6 +7,11 @@ public class ServerRevision implements Revision<ServerRevision>, Comparable<Serv
 
     public static final ServerRevision SEEDED_VERSION = ONE;
 
+    /**
+     * TODO(lfryc): this should be reinspected, in original DefaultEdit, the default was undefined
+     */
+    public static final ServerRevision DEFAULT_VERSION = new ServerRevision(0L);
+
     private long version;
 
     public ServerRevision(long version) {
@@ -48,5 +53,10 @@ public class ServerRevision implements Revision<ServerRevision>, Comparable<Serv
         if (version != other.version)
             return false;
         return true;
+    }
+
+    @Override
+    public String toString() {
+        return "ServerRevision [" + version + "]";
     }
 }

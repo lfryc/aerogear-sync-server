@@ -117,6 +117,14 @@ public class DefaultEdit implements Edit {
         return true;
     }
 
+
+
+    @Override
+    public String toString() {
+        return "DefaultEdit [clientId=" + clientId + ", documentId=" + documentId + ", clientVersion=" + clientVersion
+                + ", serverVersion=" + serverVersion + ", # of diffs=" + diffs.size() + "]";
+    }
+
     public static Builder withDocumentId(final String documentId) {
         return new Builder(documentId);
     }
@@ -125,8 +133,8 @@ public class DefaultEdit implements Edit {
 
         private final String documentId;
         private String clientId;
-        private ServerRevision serverVersion;
-        private ClientRevision clientVersion;
+        private ServerRevision serverVersion = ServerRevision.DEFAULT_VERSION;
+        private ClientRevision clientVersion = ClientRevision.DEFAULT_VERSION;
         private String checksum;
         private final LinkedList<Diff> diffs = new LinkedList<Diff>();
 
@@ -194,6 +202,12 @@ public class DefaultEdit implements Edit {
         public Edit build() {
             if (clientId == null) {
                 throw new IllegalArgumentException("clientId must not be null");
+            }
+            if (clientVersion == null) {
+                throw new IllegalArgumentException("clientVersion must not be null");
+            }
+            if (serverVersion == null) {
+                throw new IllegalArgumentException("serverVersion must not be null");
             }
             return new DefaultEdit(this);
         }
