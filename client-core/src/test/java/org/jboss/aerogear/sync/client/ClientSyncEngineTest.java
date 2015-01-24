@@ -257,7 +257,7 @@ public class ClientSyncEngineTest {
         final ShadowDocument<String> shadowDocument2 = dataStore.getShadowDocument(documentId, clientId);
         assertThat(shadowDocument2.document().content(), equalTo(finalVersion));
         assertThat(shadowDocument2.clientVersion().version(), is(0L));
-        assertThat(shadowDocument2.serverVersion().version(), is(1L));
+        assertThat(shadowDocument2.serverVersion().version(), is(2L));
 
         final BackupShadowDocument<String, ClientRevision> backupShadowDocument2 = dataStore.getBackupShadowDocument(documentId, shadowDocument.clientVersion());
         assertThat(backupShadowDocument2.backupVersion().version(), is(0L));
