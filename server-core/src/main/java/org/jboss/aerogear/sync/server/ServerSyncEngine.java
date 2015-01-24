@@ -289,8 +289,8 @@ public class ServerSyncEngine<T> {
         if (serverVersionMatch(backup, edit)) {
             final ShadowDocument<T> patchedShadow = synchronizer.patchShadow(edit,
                     new DefaultShadowDocument<T>(backup.backupVersion(), shadow.clientVersion(), backup.shadow().document()));
-            dataStore.removeEdits(edit.documentId(), edit.clientId());
             ShadowDocument<T> newShadow = incrementClientVersion(patchedShadow);
+            dataStore.removeEdits(edit.documentId(), edit.clientId());
             dataStore.saveShadowDocument(newShadow);
             return newShadow;
         } else {
