@@ -129,8 +129,8 @@ public final class JsonMapper {
                         continue;
                     }
                     final Builder eb = DefaultEdit.withDocumentId(documentId).clientId(clientId);
-                    eb.clientVersion(new ClientRevision(edit.get("clientVersion").asLong()));
-                    eb.serverVersion(new ServerRevision(edit.get("serverVersion").asLong()));
+                    eb.clientVersion(new ClientRevision(edit.get("clientVersion").asText()));
+                    eb.serverVersion(new ServerRevision(edit.get("serverVersion").asText()));
                     eb.checksum(edit.get("checksum").asText());
                     final JsonNode diffsNode = edit.get("diffs");
                     if (diffsNode.isArray()) {
@@ -166,8 +166,8 @@ public final class JsonMapper {
                 jgen.writeStartObject();
                 jgen.writeStringField("clientId", edit.clientId());
                 jgen.writeStringField("id", edit.documentId());
-                jgen.writeNumberField("clientVersion", edit.clientVersion().version());
-                jgen.writeNumberField("serverVersion", edit.serverVersion().version());
+                jgen.writeStringField("clientVersion", edit.clientVersion().version());
+                jgen.writeStringField("serverVersion", edit.serverVersion().version());
                 jgen.writeStringField("checksum", edit.checksum());
                 jgen.writeArrayFieldStart("diffs");
                 if (!edit.diffs().isEmpty()) {
@@ -194,8 +194,8 @@ public final class JsonMapper {
             final JsonNode edit = oc.readTree(jp);
             final Builder eb = DefaultEdit.withDocumentId(edit.get("id").asText());
             eb.clientId(edit.get("clientId").asText());
-            eb.clientVersion(new ClientRevision(edit.get("clientVersion").asLong()));
-            eb.serverVersion(new ServerRevision(edit.get("serverVersion").asLong()));
+            eb.clientVersion(new ClientRevision(edit.get("clientVersion").asText()));
+            eb.serverVersion(new ServerRevision(edit.get("serverVersion").asText()));
             eb.checksum(edit.get("checksum").asText());
             final JsonNode diffsNode = edit.get("diffs");
             if (diffsNode.isArray()) {
@@ -217,8 +217,8 @@ public final class JsonMapper {
             jgen.writeStringField("msgType", "patch");
             jgen.writeStringField("clientId", edit.clientId());
             jgen.writeStringField("id", edit.documentId());
-            jgen.writeNumberField("clientVersion", edit.clientVersion().version());
-            jgen.writeNumberField("serverVersion", edit.serverVersion().version());
+            jgen.writeStringField("clientVersion", edit.clientVersion().version());
+            jgen.writeStringField("serverVersion", edit.serverVersion().version());
             jgen.writeStringField("checksum", edit.checksum());
             jgen.writeArrayFieldStart("diffs");
             if (!edit.diffs().isEmpty()) {

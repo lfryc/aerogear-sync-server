@@ -133,8 +133,8 @@ public class DefaultEdit implements Edit {
 
         private final String documentId;
         private String clientId;
-        private ServerRevision serverVersion = ServerRevision.DEFAULT_VERSION;
-        private ClientRevision clientVersion = ClientRevision.DEFAULT_VERSION;
+        private ServerRevision serverVersion;
+        private ClientRevision clientVersion;
         private String checksum;
         private final LinkedList<Diff> diffs = new LinkedList<Diff>();
 
@@ -151,11 +151,11 @@ public class DefaultEdit implements Edit {
             return this;
         }
 
-        public Builder serverVersion(final int serverVersion) {
+        public Builder serverVersion(final String serverVersion) {
             return serverVersion(new ServerRevision(serverVersion));
         }
 
-        public Builder clientVersion(final int clientVersion) {
+        public Builder clientVersion(final String clientVersion) {
             return clientVersion(new ClientRevision(clientVersion));
         }
 
@@ -203,12 +203,12 @@ public class DefaultEdit implements Edit {
             if (clientId == null) {
                 throw new IllegalArgumentException("clientId must not be null");
             }
-            if (clientVersion == null) {
-                throw new IllegalArgumentException("clientVersion must not be null");
-            }
-            if (serverVersion == null) {
-                throw new IllegalArgumentException("serverVersion must not be null");
-            }
+//            if (clientVersion == null) {
+//                throw new IllegalArgumentException("clientVersion must not be null");
+//            }
+//            if (serverVersion == null) {
+//                throw new IllegalArgumentException("serverVersion must not be null");
+//            }
             return new DefaultEdit(this);
         }
     }

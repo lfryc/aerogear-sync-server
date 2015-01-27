@@ -27,6 +27,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 import org.jboss.aerogear.sync.BackupShadowDocument;
+import org.jboss.aerogear.sync.Checksum;
 import org.jboss.aerogear.sync.ClientDocument;
 import org.jboss.aerogear.sync.ClientRevision;
 import org.jboss.aerogear.sync.DefaultClientDocument;
@@ -118,17 +119,18 @@ public class ServerSyncEngineTest {
         final String documentId = "1234";
         final String clientId = "client1";
         final String originalVersion = "{\"name\": \"Mr.Babar\"}";
+        final String originalChecksum = Checksum.checksum(originalVersion);
         engine.addSubscriber(subscriber, doc(documentId, originalVersion));
 
         final ShadowDocument<String> shadowDocument = dataStore.getShadowDocument(documentId, clientId);
         assertThat(shadowDocument.document().id(), equalTo(documentId));
         assertThat(shadowDocument.document().clientId(), equalTo(clientId));
-        assertThat(shadowDocument.serverVersion().version(), is(0L));
-        assertThat(shadowDocument.clientVersion().version(), is(0L));
+        assertThat(shadowDocument.serverVersion().version(), equalTo(originalChecksum));
+        assertThat(shadowDocument.clientVersion().version(), equalTo(originalChecksum));
         assertThat(shadowDocument.document().content(), equalTo(originalVersion));
 
         final BackupShadowDocument<String, ServerRevision> backupShadow = dataStore.getBackupShadowDocument(documentId, shadowDocument.serverVersion());
-        assertThat(backupShadow.backupVersion().version(), is(0L));
+        assertThat(backupShadow.backupVersion().version(), equalTo(originalChecksum));
         assertThat(backupShadow.shadow(), equalTo(shadowDocument));
     }
 
@@ -136,13 +138,14 @@ public class ServerSyncEngineTest {
     public void diff() {
         final String documentId = "1234";
         final String originalVersion = "{\"name\": \"Mr.Babar\"}";
+        final String originalChecksum = Checksum.checksum(originalVersion);
         engine.addSubscriber(subscriber, doc(documentId, originalVersion));
 
         final Edit edit = engine.diff(documentId, subscriber.clientId());
         assertThat(edit.documentId(), equalTo(documentId));
         assertThat(edit.clientId(), equalTo(subscriber.clientId()));
-        assertThat(edit.serverVersion().version(), is(0L));
-        assertThat(edit.clientVersion().version(), is(0L));
+        assertThat(edit.serverVersion().version(), equalTo(originalChecksum));
+        assertThat(edit.clientVersion().version(), equalTo(originalChecksum));
         assertThat(edit.diffs().size(), is(1));
         assertThat(edit.diffs().peek().operation(), is(Operation.UNCHANGED));
         assertThat(edit.diffs().peek().text(), equalTo(originalVersion));
@@ -152,11 +155,15 @@ public class ServerSyncEngineTest {
     public void patch() {
         final String documentId = "1234";
         final String originalVersion = "{\"name\": \"Mr.Babar\"}";
+        final String originalChecksum = Checksum.checksum(originalVersion);
         final String updatedVersion = "{\"name\": \"Mr.Rosen\"}";
-        engine.addSubscriber(subscriber, doc(documentId, originalVersion));
+        final String updateChecksum = Checksum.checksum(updatedVersion);
+        PatchMessage patchMessage = engine.addSubscriber(subscriber, doc(documentId, originalVersion));
 
         final Edit edit = DefaultEdit.withDocumentId(documentId)
                 .clientId(subscriber.clientId())
+                .clientVersion(patchMessage.edits().peek().clientVersion())
+                .serverVersion(patchMessage.edits().peek().serverVersion())
                 .unchanged("{\"name\": ")
                 .delete("\"Mr.Babar\"")
                 .add("\"Mr.Rosen\"")
@@ -167,14 +174,14 @@ public class ServerSyncEngineTest {
         final ShadowDocument<String> shadowDocument = dataStore.getShadowDocument(documentId, subscriber.clientId());
         assertThat(shadowDocument.document().id(), equalTo(documentId));
         assertThat(shadowDocument.document().clientId(), equalTo(subscriber.clientId()));
-        assertThat(shadowDocument.serverVersion().version(), is(0L));
-        assertThat(shadowDocument.clientVersion().version(), is(1L));
+        assertThat(shadowDocument.serverVersion().version(), equalTo(originalChecksum));
+        assertThat(shadowDocument.clientVersion().version(), equalTo(updateChecksum));
         assertThat(shadowDocument.document().content(), equalTo(updatedVersion));
 
         final BackupShadowDocument<String, ServerRevision> backupShadow = dataStore.getBackupShadowDocument(documentId,
                 shadowDocument.serverVersion());
         assertThat(backupShadow.shadow().document().content(), equalTo(updatedVersion));
-        assertThat(backupShadow.backupVersion().version(), is(0L));
+        assertThat(backupShadow.backupVersion().version(), equalTo(originalChecksum));
     }
 
     @Test

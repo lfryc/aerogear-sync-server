@@ -45,8 +45,8 @@ import org.slf4j.LoggerFactory;
 public class ServerSyncEngine<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(ServerSyncEngine.class);
-    private static final ClientRevision SEEDED_CLIENT_VERSION = ClientRevision.SEEDED_VERSION;
-    private static final ServerRevision SEEDED_SERVER_VERSION = ServerRevision.SEEDED_VERSION;
+//    private static final ClientRevision SEEDED_CLIENT_VERSION = ClientRevision.SEEDED_VERSION;
+//    private static final ServerRevision SEEDED_SERVER_VERSION = ServerRevision.SEEDED_VERSION;
     private static final LinkedList<Edit> EMPTY_EDITS = new LinkedList<Edit>();
     private static final ConcurrentHashMap<String, Set<Subscriber<?>>> subscribers =
             new ConcurrentHashMap<String, Set<Subscriber<?>>>();
@@ -151,7 +151,7 @@ public class ServerSyncEngine<T> {
     private ShadowDocument<T> seededShadowFrom(final ShadowDocument<T> shadow, final Document<T> doc) {
         final Document<T> document = doc.content() == null ? dataStore.getDocument(doc.id()) : doc;
         final ClientDocument<T> clientDoc = new DefaultClientDocument<T>(doc.id(), shadow.document().clientId(), document.content());
-        return new DefaultShadowDocument<T>(SEEDED_SERVER_VERSION, SEEDED_CLIENT_VERSION, clientDoc);
+        return new DefaultShadowDocument<T>(ServerRevision.initialRevision(doc), ClientRevision.initialRevision(doc), clientDoc);
     }
 
     /**
@@ -220,13 +220,15 @@ public class ServerSyncEngine<T> {
     }
 
     private ShadowDocument<T> addShadowForClient(final String documentId, final String clientId) {
-        return addShadow(documentId, clientId, 0L);
+        return addShadow(documentId, clientId);
     }
 
-    private ShadowDocument<T> addShadow(final String documentId, final String clientId, final long clientVersion) {
+    private ShadowDocument<T> addShadow(final String documentId, final String clientId) {
         final Document<T> document = dataStore.getDocument(documentId);
+        ClientRevision initialClientRevision = ClientRevision.initialRevision(document);
+        ServerRevision initialServerRevision = ServerRevision.initialRevision(document);
         final ClientDocument<T> clientDocument = new DefaultClientDocument<T>(documentId, clientId, document.content());
-        final ShadowDocument<T> shadowDocument = new DefaultShadowDocument<T>(new ServerRevision(0L), new ClientRevision(clientVersion), clientDocument);
+        final ShadowDocument<T> shadowDocument = new DefaultShadowDocument<T>(initialServerRevision, initialClientRevision, clientDocument);
         dataStore.saveShadowDocument(shadowDocument);
         dataStore.saveBackupShadowDocument(newBackupShadow(shadowDocument));
         return shadowDocument;
@@ -312,11 +314,11 @@ public class ServerSyncEngine<T> {
     }
 
     private ShadowDocument<T> incrementClientVersion(final ShadowDocument<T> shadow) {
-        return new DefaultShadowDocument<T>(shadow.serverVersion(), shadow.clientVersion().increment(), shadow.document());
+        return new DefaultShadowDocument<T>(shadow.serverVersion(), shadow.clientVersion().increment(shadow.document()), shadow.document());
     }
 
     private ShadowDocument<T> incrementServerVersion(final ShadowDocument<T> shadow) {
-        return new DefaultShadowDocument<T>(shadow.serverVersion().increment(), shadow.clientVersion(), shadow.document());
+        return new DefaultShadowDocument<T>(shadow.serverVersion().increment(shadow.document()), shadow.clientVersion(), shadow.document());
     }
 
     private DefaultBackupShadowDocument<T, ServerRevision> newBackupShadow(final ShadowDocument<T> shadow) {
