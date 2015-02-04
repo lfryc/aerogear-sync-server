@@ -199,8 +199,7 @@ public class ClientSyncEngine<T, S extends Edit<? extends Diff>> extends Observa
         final String clientId = shadow.document().clientId();
         final BackupShadowDocument<T> backup = getBackupShadowDocument(documentId, clientId);
         if (clientVersionMatch(edit, backup)) {
-            final ShadowDocument<T> patchedShadow = clientSynchronizer.patchShadow(edit,
-                    newShadowDoc(backup.version(), shadow.clientVersion(), backup.shadow().document()));
+            final ShadowDocument<T> patchedShadow = clientSynchronizer.patchShadow(edit, backup.shadow());
             dataStore.removeEdits(documentId, clientId);
             return saveShadow(incrementServerVersion(patchedShadow), edit);
         } else {

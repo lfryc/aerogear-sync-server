@@ -259,6 +259,9 @@ public class ServerSyncEngineTest {
 
         engine.patch(patchMessage(documentId, subscriber.clientId(), firstEdit));
 
+        final Document<String> document = dataStore.getDocument(documentId);
+        assertThat(document.content(), equalTo(secondVersion));
+
         final ShadowDocument<String> shadowDocument = dataStore.getShadowDocument(documentId, subscriber.clientId());
         assertThat(shadowDocument.document().content(), equalTo(secondVersion));
         // client version is updated when the patch is applied to the server side shadow. This will have happend on
@@ -290,12 +293,17 @@ public class ServerSyncEngineTest {
 
         engine.patch(patchMessage(documentId, subscriber.clientId(), firstEdit, secondEdit));
 
-        final ShadowDocument<String> secondShadow = dataStore.getShadowDocument(documentId, subscriber.clientId());
-        assertThat(secondShadow.document().content(), equalTo(thirdVersion));
+        final ShadowDocument<String> patchedShadow = dataStore.getShadowDocument(documentId, subscriber.clientId());
+        assertThat(patchedShadow.document().content(), equalTo(thirdVersion));
         // a patch on the shadow will increment the client version so that it matches the shadow on the client. Remember
         // on the client side the shadow version is updated after the diff is taken.
-        assertThat(secondShadow.clientVersion(), is(2L));
-        assertThat(secondShadow.serverVersion(), is(0L));
+        assertThat(patchedShadow.clientVersion(), is(2L));
+        assertThat(patchedShadow.serverVersion(), is(0L));
+
+        // the last step of the patch process is to copy the the shadow to the backup
+        final BackupShadowDocument<String> patchedBackupShadow = dataStore.getBackupShadowDocument(documentId, subscriber.clientId());
+        assertThat(patchedBackupShadow.version(), is(0L));
+        assertThat(patchedBackupShadow.shadow(), equalTo(patchedShadow));
 
         // the edit stack should be cleared now as we have reverted to a previous version.
         final Queue<DiffMatchPatchEdit> edits = dataStore.getEdits(documentId, subscriber.clientId());
