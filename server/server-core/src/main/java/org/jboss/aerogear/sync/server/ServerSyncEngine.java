@@ -304,11 +304,13 @@ public class ServerSyncEngine<T, S extends Edit<? extends Diff>> {
         final String documentId = patchMessage.documentId();
         final String clientId = patchMessage.clientId();
         ShadowDocument<T> shadow = getShadowDocument(documentId, clientId);
+        boolean restored = false;
         final Iterator<S> iterator = patchMessage.edits().iterator();
         while (iterator.hasNext()) {
             final S edit = iterator.next();
             if (droppedServerPacket(edit, shadow)) {
                 shadow = restoreBackup(shadow, edit);
+                restored = true;
                 continue;
             }
             if (hasClientUpdate(edit, shadow)) {
@@ -320,7 +322,20 @@ public class ServerSyncEngine<T, S extends Edit<? extends Diff>> {
                 shadow = saveShadowAndRemoveEdit(incrementClientVersion(patchedShadow), edit);
             }
         }
-        return shadow;
+        if (restored) {
+            // reverse the normal patching form a client. Instead of taking the clients shadow and creating
+            // an edit of changes, we take the servers changes and create a edit of changes made on the server
+            // and create an edit for those changes to be applied to the client's shadow document.
+            // we are prefering the server updates vs the clients updates in the case the client has not been
+            // receiving updates from the server.
+            final S edit = serverDiff(getDocument(documentId), shadow);
+            // apply the changes between the server version and the clients version to the client's shadow document
+            final Document<T> patched = synchronizer.patchDocument(edit, shadow.document());
+            return saveShadow(newShadowDoc(shadow.serverVersion(), shadow.clientVersion(),
+                    newClientDocument(documentId, clientId, patched.content())));
+        } else {
+           return shadow;
+        }
     }
 
     private ShadowDocument<T> restoreBackup(final ShadowDocument<T> shadow,
