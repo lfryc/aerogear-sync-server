@@ -16,6 +16,16 @@
  */
 package org.jboss.aerogear.sync.diffmatchpatch.server;
 
+import static java.util.Arrays.asList;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.util.LinkedList;
+import java.util.Queue;
+
 import org.jboss.aerogear.sync.BackupShadowDocument;
 import org.jboss.aerogear.sync.ClientDocument;
 import org.jboss.aerogear.sync.DefaultClientDocument;
@@ -33,16 +43,6 @@ import org.jboss.aerogear.sync.server.ServerSyncEngine;
 import org.jboss.aerogear.sync.server.Subscriber;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.LinkedList;
-import java.util.Queue;
-
-import static java.util.Arrays.asList;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class ServerSyncEngineTest {
 
@@ -245,7 +245,8 @@ public class ServerSyncEngineTest {
         final String documentId = "1234";
         final String originalVersion = "{\"name\": \"Mr.Babar\", \"age\": \"30\"}";
         final String secondVersion = "{\"name\": \"Mr.Rosen\", \"age\": \"30\"}";
-        final String serverChangedVersion = "{\"name\": \"Mr.RosenRosen\", \"age\": \"35\"}";
+        final String serverChangedVersion = "{\"name\": \"Mr.Rosen\", \"age\": \"35\"}";
+        final String mergedVersion = "{\"name\": \"Mr.Poon\", \"age\": \"35\"}";
         engine.addSubscriber(subscriber, doc(documentId, originalVersion));
 
         final DiffMatchPatchEdit firstEdit = DiffMatchPatchEdit.withChecksum("bogus")
@@ -315,7 +316,7 @@ public class ServerSyncEngineTest {
         // when a client document is restored the servers version will be prefered and the changes from the client
         // diffed against it.
         final Document<String> finalDocument = dataStore.getDocument(documentId);
-        assertThat(finalDocument.content(), equalTo(serverChangedVersion));
+        assertThat(finalDocument.content(), equalTo(mergedVersion));
     }
 
     private static PatchMessage<DiffMatchPatchEdit> patchMessage(final String docId, final String clientId, DiffMatchPatchEdit... edit) {
